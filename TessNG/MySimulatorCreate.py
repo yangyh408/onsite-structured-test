@@ -7,14 +7,11 @@ from typing import Tuple
 from DockWidget import *
 from Tessng import *
 import Tessng
-from TessNG.scenarioManager import scenarioManager
-from TessNG.recorder import Recorder
-from TessNG.observation import Observation
+from utils.observation import Observation
 
-from utils.config import *
+from config.config import *
 from utils.functions import *
 from utils.netStruct import paintPos, startEndPos, waypoints
-from utils.AutoSelfDrivingCar import Car
 
 # todo 准备接入penScenario文件的第一帧所有车的数据，用官方案例的inputs和outputs
 startTest = True
@@ -342,11 +339,6 @@ class MySimulator(QObject, PyCustomerSimulator):
             if vehi:
                 self.EgoIndex[vehi.id()] = vehi.name()
                 self.EgoPos = startPos
-
-    # ego = Car(id=vehi.id(), name=vehi.name(), Xpos=p2m(vehi.pos().x()), Ypos=-p2m(vehi.pos().y()),
-    #           speed=p2m(vehi.currSpeed()), roadType=vehi.roadType(), frameCount=5, threshold=0.11)
-    # # 创建计算对象
-    # self.egoList.append(ego)
                 
     def updateEgoRoute(self, pIVehicle):
         if pIVehicle.name() == self.EgoName:

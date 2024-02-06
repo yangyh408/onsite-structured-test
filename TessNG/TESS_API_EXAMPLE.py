@@ -8,7 +8,6 @@ from Tessng import *
 import Tessng
 
 from utils.netStruct import waypoints, startEndPos
-# from PySide2.QtGui import QPainter
 
 class TESS_API_EXAMPLE(QMainWindow):
     def __init__(self, parent=None):

@@ -8,7 +8,7 @@ import sys
 
 from TessNG.MyPlugin import MyPlugin
 from TessNG.TESS_API_EXAMPLE import *
-from utils.config import *
+from config.config import *
 
 def startTessNG():
     app = QApplication()

@@ -11,7 +11,6 @@ import Tessng
 from Tessng import p2m, m2p
 from PySide2.QtCore import QPointF
 from utils.netStruct import outSide, crash
-from utils.config import *
 
 
 def getVehicleInfo(observation) -> dict:
@@ -82,51 +81,49 @@ def _is_collision(ego_info: dict, vehicle_info: dict) -> bool:
 
 
 def detectCollision(vehicleInfo: dict) -> dict:
-    ego = vehicleInfo.get(EGO_INFO['name'])
+    ego = vehicleInfo.get('ego')
     if ego:
         for vehicle_id, vehicle_info in vehicleInfo.items():
-            if vehicle_id != EGO_INFO['name']:
+            if vehicle_id != 'ego':
                 if _is_collision(ego, vehicle_info):
                     collideVehicle = dict(**vehicle_info, id=vehicle_id)
                     return {
                         'collideVehicle': collideVehicle,
-                        EGO_INFO['name']: ego,
+                        'ego': ego,
                     }
     return {}
 
 
-def testFinish(goal: list, currentBatchNum: int, vehicleInfo: dict, outOfMap: bool) -> int:
+def testFinish(goal: list, vehicleInfo: dict, outOfTime: bool, outOfMap: bool) -> int:
     # 测试结束有两个条件，Ego行驶到对应的终点面域或者达到极限测试批次
     if outOfMap:
         print(f"[FAILED](CODE-4): 测试车驶出道路边界")
         outSide["outSide"] = True
         return 4
 
-    if currentBatchNum >= calculateBatchesFinish:
-        print(f"[FAILED](CODE-2): 测试车仿真超时")
-        print(f"    --> 当前仿真批次:{currentBatchNum} 最大测试批次:{calculateBatchesFinish}")
+    if outOfTime:
+        print(f"[FAILED](CODE-2): 测试超时")
         return 2
 
-    if vehicleInfo.get(EGO_INFO['name']):
+    if vehicleInfo.get('ego'):
         collideInfo = detectCollision(vehicleInfo)
         if collideInfo:
             print(f"[FAILED](CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
-            print(f"    --> 测试车状态 x:{collideInfo[EGO_INFO['name']]['x']} y:{collideInfo[EGO_INFO['name']]['y']} "
-                  f"yaw:{collideInfo[EGO_INFO['name']]['yaw']} length:{collideInfo[EGO_INFO['name']]['length']} "
-                  f"width:{collideInfo[EGO_INFO['name']]['width']}")
+            print(f"    --> 测试车状态 x:{collideInfo['ego']['x']} y:{collideInfo['ego']['y']} "
+                  f"yaw:{collideInfo['ego']['yaw']} length:{collideInfo['ego']['length']} "
+                  f"width:{collideInfo['ego']['width']}")
             print(f"    --> 背景车状态 x:{collideInfo['collideVehicle']['x']} y:{collideInfo['collideVehicle']['y']} "
                   f"yaw:{collideInfo['collideVehicle']['yaw']} length:{collideInfo['collideVehicle']['length']} "
                   f"width:{collideInfo['collideVehicle']['width']}")
             crash["crash"] = True
             return 3
 
-        if is_point_inside_rect(goal, [vehicleInfo.get(EGO_INFO['name'])['x'], vehicleInfo.get(EGO_INFO['name'])['y']]):
+        if is_point_inside_rect(goal, [vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]):
             print(f"[SUCCESS](CODE-1): 测试车成功抵达目标区域")
-            print(f"    --> 测试车位置:{[vehicleInfo.get(EGO_INFO['name'])['x'], vehicleInfo.get(EGO_INFO['name'])['y']]} 终点区域:{goal}")
+            print(f"    --> 测试车位置:{[vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]} 终点区域:{goal}")
             return 1
     else:
         print(f"[ERROR](CODE-0): 测试车已在仿真环境中删除")
-        # return 0
 
     return -1
 
