@@ -233,7 +233,7 @@ def updateEgoPos(action: tuple, observation) -> dict:
     # 分别取出加速度和前轮转向角
     a, rot = action
     # 取出步长
-    _dt = observation.test_setting['dt']
+    _dt = observation.test_info['dt']
     # 取出本车的各类信息
     try:
         x, y, v, yaw, width, length = [float(observation.vehicle_info['ego'][key]) for key in [

@@ -25,7 +25,7 @@ class ScenarioManagerBase():
         try:
             self.cur_scene = self._struct_scene_info()
             self.record[self.cur_scene['scenarioName']] = 'Loaded Success'
-            self._print()
+            self._print(self.print_info)
             return True
         except Exception as e:
             print(repr(e))
@@ -38,8 +38,8 @@ class ScenarioManagerBase():
         }
         return scene_info
 
-    def _print(self):
-        if self.print_info:
+    def _print(self, is_print: bool):
+        if is_print:
             print('*'*100)
             for key, value in self.cur_scene.items():
                 if key != 'waypoints' and key != 'vehicle_init_status':
@@ -88,6 +88,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         scene_info = {
             'scenarioNum': self.cur_scene_num,
             'scenarioName': self.tasks[self.cur_scene_num],
+            'scenarioType': "FRAGMENT",
             'tess_file_path': self._find_file_with_suffix(scene_dir, '.tess'),
             'xodr_file_path': self._find_file_with_suffix(scene_dir, '.xodr'),
             'xosc_file_path': self._find_file_with_suffix(scene_dir, '.xosc'),
@@ -188,6 +189,7 @@ class ScenarioManagerForSerial(ScenarioManagerBase):
         scene_info = {
             'scenarioNum': self.cur_scene_num,
             'scenarioName': self.tasks[self.cur_scene_num].split('.json')[0],
+            'scenarioType': "SERIAL",
             'tess_file_path': self._find_file_with_suffix(map_path, '.tess'),
             'xodr_file_path': self._find_file_with_suffix(map_path, '.xodr'),
             'startPos': scene_json['startPos'],
@@ -197,6 +199,38 @@ class ScenarioManagerForSerial(ScenarioManagerBase):
         return scene_info
 
 
+class ScenarioManagerForReplay(ScenarioManagerBase):
+    def __init__(self, scenario_dir: str, tasks: [str], print_info: bool = False):
+        super().__init__(print_info)
+
+        self.task_dir = os.path.abspath(scenario_dir)
+        if tasks == None:
+            for scene_name in os.listdir(self.task_dir):
+                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
+                    self.tasks.append(scene_name)
+        else:
+            for scene_name in tasks:
+                if os.path.exists(os.path.join(self.task_dir, scene_name)):
+                    self.tasks.append(scene_name)
+                else:
+                    print(f"[LOAD SENARIO ERROR]: Cannot find task {scene_name}, please check the task name and retry!")
+        self.tot_scene_num = len(self.tasks)
+
+    def _struct_scene_info(self):
+        scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
+        scene_info = {
+            'scenarioNum': self.cur_scene_num,
+            'scenarioName': self.tasks[self.cur_scene_num],
+            'scenarioType': "REPLAY",
+            'xodr_file_path': self._find_file_with_suffix(scene_dir, '.xodr'),
+            'xosc_file_path': self._find_file_with_suffix(scene_dir, '.xosc'),
+            'json_file_path': self._find_file_with_suffix(scene_dir, '.json'),
+            'startPos': None,
+            'targetPos': None,
+            'dt': None,
+        }
+        return scene_info
+
 def scenarioManager(mode: str, tasks: [str], print_info: bool = False):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     task_dir = os.path.join(base_dir, 'scenario', mode)
@@ -204,9 +238,15 @@ def scenarioManager(mode: str, tasks: [str], print_info: bool = False):
         return ScenarioManagerForFragment(task_dir, tasks, print_info)
     elif mode == "SERIAL":
         return ScenarioManagerForSerial(task_dir, tasks, print_info)
+    elif mode == "REPLAY":
+        return ScenarioManagerForReplay(task_dir, tasks, print_info)
     else:
         raise RuntimeError("There is no valid mode, please choose in 'fragment' and 'serial'")
             
 if __name__ == '__main__':
-    sm = scenarioManager('fragment', ['test1', 'test2'], print_info=True)
+    sm = scenarioManager('REPLAY', None, print_info=True)
+    print(sm.tasks)
+    sm.next()
+    sm.next()
+    sm.next()
     sm.next()

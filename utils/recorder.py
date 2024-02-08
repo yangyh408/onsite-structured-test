@@ -16,10 +16,10 @@ class DataRecord:
         stored_vehicles = self.data.keys()
 
         # 提取observation对应的时刻
-        t = observation.test_setting['t']
+        t = observation.test_info['t']
 
         # 遍历observation中的所有车辆
-        for vehicle_name, values in observation.vehicle_info.items():
+        for vehicle_name, values in observation.object_info().items():
             # 如果vehi_name对应的车还没有建立DataFrame,则先建立
             if vehicle_name not in stored_vehicles:
                 self._add_vehicle_frame(vehicle_name)
@@ -70,7 +70,7 @@ class Recorder:
     def record(self, observation):
         if self.end_status == -1:
             self.data.add_data(observation)
-            self.end_status = observation.test_setting['end']
+            self.end_status = observation.test_info['end']
 
     def output(self, output_path):
         if not os.path.exists(os.path.dirname(output_path)):

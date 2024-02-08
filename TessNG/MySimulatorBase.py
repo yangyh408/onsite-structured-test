@@ -118,19 +118,14 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         vehicleTotal.vehicle_info = vehicleInfo
         vehicleTotal.light_info = {'green'}
 
-        vehicleTotal.test_setting = {"scenario_name": f"{self.scenario_manager.cur_scene['scenarioName']}",
-                                     "scenario_type": self.scenario_type,
-                                     "max_t": self.maxTestTime, "t": currentTestTime / 1000, "dt": self.dt,
-                                     "goal": {"x": [self.scenario_manager.cur_scene['targetPos'][0][0],
-                                                    self.scenario_manager.cur_scene['targetPos'][1][0]],
-                                              "y": [self.scenario_manager.cur_scene['targetPos'][0][1],
-                                                    self.scenario_manager.cur_scene['targetPos'][1][1]]},
-                                     "end": testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
-                                                       vehicleInfo=vehicleInfo,
-                                                       outOfTime=(currentTestTime/1000)>=self.maxTestTime,
-                                                       outOfMap=self.outSideTessngNet
-                                                       ),
-                                     'x_max': 2000.0, 'x_min': -2000.0, 'y_max': 2000, 'y_min': -2000,
+        vehicleTotal.test_info = {
+            "t": currentTestTime / 1000, 
+            "dt": self.dt,
+            "end": testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
+                              vehicleInfo=vehicleInfo,
+                              outOfTime=(currentTestTime/1000)>=self.maxTestTime,
+                              outOfMap=self.outSideTessngNet
+                              )
         }
         return vehicleTotal
 
@@ -212,10 +207,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
 
     def dealRecord(self):
         if self.scenario_manager.cur_scene_num >= 0:
-            base_dir = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..'))
-            self.recorder.output(os.path.join(os.path.join(base_dir, 'outputs'),
-                                            f"{self.scenario_type}_{self.scenario_manager.cur_scene_num}_{self.scenario_manager.cur_scene['scenarioName']}_result.csv"))
-
-
+            output_dir = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
+            output_name =  f"{self.scenario_type}_{self.scenario_manager.cur_scene_num}_{self.scenario_manager.cur_scene['scenarioName']}_result.csv"
+            self.recorder.output(os.path.join(output_dir, output_name))
+                                           
     def afterStop(self):
         pass

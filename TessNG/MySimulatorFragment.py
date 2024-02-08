@@ -80,10 +80,10 @@ class MySimulatorFragment(MySimulatorBase):
 
             # observation 用于轨迹记录
             self.observation = self.tessngServerMsg(simuiface, simuTime)
-            print(self.observation.vehicle_info)
+            # print(self.observation.vehicle_info)
             self.recorder.record(self.observation)
             if getVehicleInfo(self.observation):
-                if self.observation.test_setting['end'] == -1:
+                if self.observation.test_info['end'] == -1:
                     action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
                     self.nextEgoInfo = updateEgoPos(action, self.observation)
                     paintPos["pos"] = self.nextEgoInfo
@@ -114,7 +114,6 @@ class MySimulatorFragment(MySimulatorBase):
         if self.scenario_manager.next():
             # 重置记录模块
             self.recorder.init()
-            self.observation.init()
             self.planner.init(self.scenario_manager.cur_scene)
             # self.createCarList = list(self.scenario_manager.cur_scene['vehicle_init_status'].keys())
             iface = tessngIFace()
