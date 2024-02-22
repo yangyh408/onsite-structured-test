@@ -1,4 +1,4 @@
-from onsite.observation import Observation
+from utils.observation import Observation
 
 class PlannerBase:
     def __init__(self) -> None:

@@ -32,6 +32,17 @@ class ScenarioManagerBase():
             self.record[self.tasks[self.cur_scene_num]] = repr(e)
             return self.next()
         
+    def current_scene_info(self):
+        return {
+            'scenarioNum': self.cur_scene.get('scenarioNum', -1),
+            'scenarioName': self.cur_scene.get('scenarioName'),
+            'scenarioType': self.cur_scene.get('scenarioType'),
+            'xodr_file_path': self.cur_scene.get('xodr_file_path'),
+            'startPos': self.cur_scene.get('startPos'),
+            'targetPos': self.cur_scene.get('targetPos'),
+            'waypoints': self.cur_scene.get('waypoints', []),
+        }
+        
     def _struct_scene_info(self):
         scene_info = {
             'scenarioName': self.tasks[self.cur_scene_num],
@@ -233,7 +244,7 @@ class ScenarioManagerForReplay(ScenarioManagerBase):
 
 def scenarioManager(mode: str, tasks: [str], print_info: bool = False):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    task_dir = os.path.join(base_dir, 'scenario', mode)
+    task_dir = os.path.join(base_dir, 'scenario', mode.lower())
     if mode == 'FRAGMENT':
         return ScenarioManagerForFragment(task_dir, tasks, print_info)
     elif mode == "SERIAL":

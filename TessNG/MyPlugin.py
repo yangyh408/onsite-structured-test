@@ -51,10 +51,10 @@ class MyPlugin(TessPlugin):
     def init(self):
         self.initGui()
         self.mNetInf = MyNet()
-        if self.mode == 'serial':
+        if self.mode == 'SERIAL':
             print(self.config)
             self.mSimuInf = MySimulatorSerial(self.config, self.planner)
-        elif self.mode == 'fragment':
+        elif self.mode == 'FRAGMENT':
             self.mSimuInf = MySimulatorFragment(self.config, self.planner)
         self.mSimuInf.signalRunInfo.connect(self.examleWindow.showRunInfo)
         iface = tngIFace()

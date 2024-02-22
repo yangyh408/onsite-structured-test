@@ -19,7 +19,7 @@ def run(mode_config: dict, PLANNER: object) -> None:
         observation = controller.init(sm.cur_scene)
         sm._print(is_print=True)
         # 被测物根据场景信息进行初始化设置
-        planner.init(sm.cur_scene)
+        planner.init(sm.current_scene_info())
 
         while True:
             observation = controller.update_frame(observation)

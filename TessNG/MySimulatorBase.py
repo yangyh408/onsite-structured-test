@@ -63,6 +63,10 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         while True:
+            # TODO: 针对Linux系统下无法自动运行添加的判断
+            # if not simuiface.isRunning():
+            #     simuiface.startSimu()
+            #     time.sleep(2)
             if self.startTest:
                 self.startTest = False
                 time.sleep(1)

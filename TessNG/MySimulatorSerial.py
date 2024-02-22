@@ -27,13 +27,8 @@ class MySimulatorSerial(MySimulatorBase):
         self.scenario_manager = scenarioManager(self.scenario_type, config['tasks'], print_info=True)
         # 实例化规控器
         self.planner = planner()
-        # 规控器获取初始场景信息
-        self.planner.init(self.scenario_manager.cur_scene)
 
     def ref_beforeStart(self, ref_keepOn):
-        # 是否完成测试
-        self.finishTest = False
-
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         simuiface.setSimuAccuracy(1 / self.dt)
@@ -90,6 +85,7 @@ class MySimulatorSerial(MySimulatorBase):
                     self.finishTest = True
 
     def afterStop(self):
+        self.finishTest = False
         self.clearLastTest()
         self.dealRecord()
 
@@ -97,7 +93,7 @@ class MySimulatorSerial(MySimulatorBase):
         if self.scenario_manager.next():
             # 重置记录模块
             self.recorder.init()
-            self.planner.init(self.scenario_manager.cur_scene)
+            self.planner.init(self.scenario_manager.current_scene_info())
             iface = tessngIFace()
             simuiface = iface.simuInterface()
             netface = iface.netInterface()

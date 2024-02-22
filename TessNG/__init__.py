@@ -4,6 +4,7 @@ import json
 import time
 import signal
 import _thread
+import platform
 from multiprocessing import Process
 
 import os
@@ -32,12 +33,22 @@ def startTessNG(mode: str, mode_config: dict, planner: object):
         sys.exit(app.exec_())
 
 def kill(targetPid):
-    try:
-        os.kill(targetPid, signal.SIGINT)
-        print("Kill", targetPid)
-        # a = os.kill(pid, signal.9) #　与上等效
-    except OSError as e:
-        print(e)
+    if platform.system().lower() == "windows":
+        try:
+            os.kill(targetPid, signal.SIGINT)
+            print(f"kill {targetPid}")
+        except OSError:
+            pass
+        except TypeError:
+            pass
+    elif platform.system().lower() == "linux":
+        try:
+            os.kill(targetPid, signal.SIGKILL)
+            print(f"kill {targetPid}")
+        except OSError:
+            pass
+        except TypeError:
+            pass
 
 def checkTessngTest(tessngPid):
     pidDict = {"done": 0}

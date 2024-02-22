@@ -11,8 +11,8 @@ class Observation():
                 "length": -1 
             },
         }
-        self.bicycle_info={}
-        self.pedestrian_info={}
+        self.bicycle_info = {}
+        self.pedestrian_info = {}
         self.light_info = {}
         self.test_info = {
             "t": 0.00, 

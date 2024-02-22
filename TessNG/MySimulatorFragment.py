@@ -30,13 +30,8 @@ class MySimulatorFragment(MySimulatorBase):
         self.scenario_manager = scenarioManager(self.scenario_type, config['tasks'], print_info=True)
         # 实例化规控器
         self.planner = planner()
-        # 规控器获取初始场景信息
-        self.planner.init(self.scenario_manager.cur_scene)
 
     def ref_beforeStart(self, ref_keepOn):
-        # 是否完成测试
-        self.finishTest = False
-
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         simuiface.setSimuAccuracy(1 / self.dt)
@@ -108,13 +103,14 @@ class MySimulatorFragment(MySimulatorBase):
         netiface.openNetFle(scene_info['tess_file_path'])
 
     def afterStop(self):
+        self.finishTest = False
         self.clearLastTest()
         self.dealRecord()
         # 开始下一个场景测试
         if self.scenario_manager.next():
             # 重置记录模块
             self.recorder.init()
-            self.planner.init(self.scenario_manager.cur_scene)
+            self.planner.init(self.scenario_manager.current_scene_info())
             # self.createCarList = list(self.scenario_manager.cur_scene['vehicle_init_status'].keys())
             iface = tessngIFace()
             simuiface = iface.simuInterface()
