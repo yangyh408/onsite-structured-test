@@ -74,13 +74,13 @@ class MySimulatorSerial(MySimulatorBase):
                 self.createCarLock = 1
             # observation 用于轨迹记录
             self.observation = self.tessngServerMsg(simuiface, simuTime)
-            self.recorder.record(self.observation)
+            self.recorder.record(self.action, self.observation)
             if getVehicleInfo(self.observation):
                 if self.observation.test_info['end'] == -1:
-                    action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
-                    self.nextEgoInfo = updateEgoPos(action, self.observation)
+                    self.action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+                    self.nextEgoInfo = updateEgoPos(self.action, self.observation)
                     paintPos["pos"] = self.nextEgoInfo
-                # print("算出新点位", self.nextEgoInfo, action)
+                # print("算出新点位", self.nextEgoInfo, self.action)
                 else:
                     self.finishTest = True
 

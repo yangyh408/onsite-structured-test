@@ -29,7 +29,9 @@ class IDM(PlannerBase):
         self.s_ = 0
 
     def init(self, scenario_dict):
-        print("--------------------------------------------------------------IDM INIT--------------------------------------------------------------")
+        print("----------------------------IDM INIT----------------------------")
+        print(scenario_dict)
+        print("----------------------------------------------------------------")
 
     def act(self, observation):
         frame = pd.DataFrame()
@@ -39,7 +41,7 @@ class IDM(PlannerBase):
             frame = pd.concat([frame, sub_frame])
         state = frame.to_numpy()
 
-        return self.deside_acc(state),0
+        return [self.deside_acc(state), 0]
 
     def deside_acc(self, state):
         v, fv, dis_gap,direction = self.getInformFront(state)

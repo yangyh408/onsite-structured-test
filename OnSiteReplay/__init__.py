@@ -14,6 +14,7 @@ def run(mode_config: dict, PLANNER: object) -> None:
     sm = scenarioManager(mode='REPLAY', tasks=mode_config['tasks'], print_info=False)
     while sm.next():
         # 记录模块初始化
+        action = [0, 0]
         recorder.init()
         # 回放测试控制器初始化，并返回主车第一帧信息
         observation = controller.init(sm.cur_scene)
@@ -23,7 +24,7 @@ def run(mode_config: dict, PLANNER: object) -> None:
 
         while True:
             observation = controller.update_frame(observation)
-            recorder.record(observation)
+            recorder.record(action, observation)
             if observation.test_info['end'] != -1:
                 output_dir = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
                 output_name = f"{sm.cur_scene['scenarioType']}_{sm.cur_scene['scenarioNum']}_{sm.cur_scene['scenarioName']}_result.csv"

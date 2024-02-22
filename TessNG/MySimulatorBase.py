@@ -54,6 +54,8 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.createCarLock = 0
         # 场景解析锁
         self.scenarioLock = 0
+        # 主车控制量
+        self.action = [0, 0]
         # 下一帧主车信息
         self.nextEgoInfo = {}
         # 启动监测线程
@@ -204,6 +206,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.mainStep(simuiface, netiface)
 
     def clearLastTest(self):
+        self.action = [0, 0]
         self.nextEgoInfo = dict()
         self.vehicleMap = dict()
         self.createCarLock = 0

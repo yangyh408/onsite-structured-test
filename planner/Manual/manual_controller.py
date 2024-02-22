@@ -43,7 +43,7 @@ class ManualController(PlannerBase):
         elif left_or_right == 'right':
             rotate = -10 * np.pi / 180
         
-        return acc, rotate
+        return [acc, rotate]
     
 
 # controller = ManualController()
