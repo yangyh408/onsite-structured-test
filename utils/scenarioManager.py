@@ -81,7 +81,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         }
 
         self.task_dir = os.path.abspath(scenario_dir)
-        if len(tasks) == 0:
+        if tasks == None:
             for scene_name in os.listdir(self.task_dir):
                 if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
                     self.tasks.append(scene_name)
@@ -180,7 +180,7 @@ class ScenarioManagerForSerial(ScenarioManagerBase):
         self.map_dir = os.path.join(scenario_dir, 'maps')
         self.task_dir = os.path.join(scenario_dir, 'tasks')
 
-        if len(tasks) == 0:
+        if tasks == None:
             for task_name in os.listdir(self.task_dir):
                 if not task_name.startswith('.') and task_name.endswith('.json'):
                     self.tasks.append(task_name)
@@ -255,9 +255,5 @@ def scenarioManager(mode: str, tasks: [str], print_info: bool = False):
         raise RuntimeError("There is no valid mode, please choose in 'fragment' and 'serial'")
             
 if __name__ == '__main__':
-    sm = scenarioManager('REPLAY', None, print_info=True)
+    sm = scenarioManager('SERIAL', None, print_info=True)
     print(sm.tasks)
-    sm.next()
-    sm.next()
-    sm.next()
-    sm.next()
