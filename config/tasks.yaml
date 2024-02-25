@@ -1,20 +1,16 @@
 FRAGMENT:
-  tasks: 
-    - test1
-    - test2
+  tasks:
   dt: 0.1
   maxTestTime: 30
+  skipExist: True
 
 SERIAL:
   tasks:
-    - Cyz_TJST_1.json
-    - Cyz_TJST_2.json
   dt: 0.05
   maxTestTime: 200
+  skipExist: True
 
 REPLAY:
   tasks:
-    - intersection_12_61_0
-    - intersection_12_61_1
-    - intersection_12_61_2
   visualize: True
+  skipExist: True

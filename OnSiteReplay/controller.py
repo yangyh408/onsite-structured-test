@@ -158,6 +158,7 @@ class ReplayParser():
         self.replay_info = ReplayInfo()
 
     def parse(self, scenario_info: dict) -> ReplayInfo:
+        self.replay_info = ReplayInfo()
         self._parse_openscenario(scenario_info['xosc_file_path'])
         self._parse_opendrive(scenario_info['xodr_file_path'])
         if scenario_info.get('json_file_path'):

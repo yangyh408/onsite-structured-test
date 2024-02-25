@@ -24,7 +24,8 @@ class MySimulatorSerial(MySimulatorBase):
         self.radius = 50
 
         # 实例化测试场景管理器
-        self.scenario_manager = scenarioManager(self.scenario_type, config['tasks'], print_info=True)
+        self.scenario_manager = scenarioManager(mode=self.scenario_type, tasks=config.get('tasks', []), skip_exist=config.get('skipExist', False), print_info=False)
+    
         # 实例化规控器
         self.planner = planner()
 

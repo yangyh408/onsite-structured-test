@@ -9,19 +9,23 @@ import re
 import xml.dom.minidom
 
 class ScenarioManagerBase():
-    def __init__(self, print_info: bool = False):
-        self.tasks = []
-
+    def __init__(self, skip_exist: bool, print_info: bool):
+        self.skip_exist = skip_exist
         self.print_info = print_info
         self.record = {}
 
+        self.scenario_type = ""
+        self.tasks = []
         self.cur_scene_num = -1
         self.cur_scene = None
-
+        self.output_path = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
+ 
     def next(self):
         self.cur_scene_num += 1
         if self.cur_scene_num >= self.tot_scene_num:
             return False
+        if self.skip_exist and self._is_exist(self.tasks[self.cur_scene_num]):
+            return self.next()
         try:
             self.cur_scene = self._struct_scene_info()
             self.record[self.cur_scene['scenarioName']] = 'Loaded Success'
@@ -41,6 +45,7 @@ class ScenarioManagerBase():
             'startPos': self.cur_scene.get('startPos'),
             'targetPos': self.cur_scene.get('targetPos'),
             'waypoints': self.cur_scene.get('waypoints', []),
+            'dt': self.cur_scene.get('dt'),
         }
         
     def _struct_scene_info(self):
@@ -48,6 +53,12 @@ class ScenarioManagerBase():
             'scenarioName': self.tasks[self.cur_scene_num],
         }
         return scene_info
+
+    def _is_exist(self, scenario_name):
+        for file in os.listdir(self.output_path):
+            if self.scenario_type in file and scenario_name in file:
+                return True
+        return False
 
     def _print(self, is_print: bool):
         if is_print:
@@ -61,14 +72,15 @@ class ScenarioManagerBase():
         for f in os.listdir(dir):
             if not f.startswith('.') and f.endswith(suffix):
                 return os.path.join(dir, f)
-        print(f"[LOAD TASK ERROR]: Cannot find file with suffix \"{suffix}\" in {dir}!")
+        # print(f"[LOAD TASK ERROR]: Cannot find file with suffix \"{suffix}\" in {dir}!")
         return ""
 
 
 class ScenarioManagerForFragment(ScenarioManagerBase):
-    def __init__(self, scenario_dir: str, tasks: [str], print_info: bool = False):
-        super().__init__(print_info)
+    def __init__(self, scenario_dir: str, tasks: [str], skip_exist: bool, print_info: bool):
+        super().__init__(skip_exist, print_info)
 
+        self.scenario_type = "FRAGMENT"
         self.vehicle_info = {
             'name': None,
             't': None,
@@ -81,31 +93,34 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         }
 
         self.task_dir = os.path.abspath(scenario_dir)
-        if tasks == None:
-            for scene_name in os.listdir(self.task_dir):
-                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
-                    self.tasks.append(scene_name)
-        else:
+        if tasks:
             for scene_name in tasks:
                 if os.path.exists(os.path.join(self.task_dir, scene_name)):
                     self.tasks.append(scene_name)
                 else:
                     print(f"[LOAD SENARIO ERROR]: Cannot find task {scene_name}, please check the task name and retry!")
+        else:
+            for scene_name in os.listdir(self.task_dir):
+                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
+                    self.tasks.append(scene_name)
         self.tot_scene_num = len(self.tasks)
 
     def _struct_scene_info(self):
         scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
         goal, vehicles = self._parse_openscenario(self._find_file_with_suffix(scene_dir, '.xosc'))
+        output_name = f"{self.scenario_type}_{self.cur_scene_num}_{self.tasks[self.cur_scene_num]}_result.csv"
         scene_info = {
             'scenarioNum': self.cur_scene_num,
             'scenarioName': self.tasks[self.cur_scene_num],
-            'scenarioType': "FRAGMENT",
+            'scenarioType': self.scenario_type,
             'tess_file_path': self._find_file_with_suffix(scene_dir, '.tess'),
             'xodr_file_path': self._find_file_with_suffix(scene_dir, '.xodr'),
             'xosc_file_path': self._find_file_with_suffix(scene_dir, '.xosc'),
+            'output_path': os.path.join(self.output_path, output_name),
             'startPos': [vehicles[0]['x'], vehicles[0]['y']],
             'targetPos': goal,
             'vehicle_init_status': vehicles,
+            'dt': None,
         }
         return scene_info
     
@@ -173,23 +188,25 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         vehicle_info['yaw'] = round(yaw, 3)
         return vehicle_info
 
-class ScenarioManagerForSerial(ScenarioManagerBase):
-    def __init__(self, scenario_dir: str, tasks: [str], print_info: bool = False):
-        super().__init__(print_info)
 
+class ScenarioManagerForSerial(ScenarioManagerBase):
+    def __init__(self, scenario_dir: str, tasks: [str], skip_exist: bool, print_info: bool):
+        super().__init__(skip_exist, print_info)
+
+        self.scenario_type = "SERIAL"
         self.map_dir = os.path.join(scenario_dir, 'maps')
         self.task_dir = os.path.join(scenario_dir, 'tasks')
 
-        if tasks == None:
-            for task_name in os.listdir(self.task_dir):
-                if not task_name.startswith('.') and task_name.endswith('.json'):
-                    self.tasks.append(task_name)
-        else:
+        if tasks:
             for task in tasks:
-                if os.path.exists(os.path.join(self.task_dir, task)):
+                if os.path.exists(os.path.join(self.task_dir, f"{task}.json")):
                     self.tasks.append(task)
                 else:
                     print(f"[LOAD SCENARIO ERROR]: Cannot find task {task}, please check the task name and retry!")
+        else:
+            for task_name in os.listdir(self.task_dir):
+                if not task_name.startswith('.') and task_name.endswith('.json'):
+                    self.tasks.append(task_name.split('.json')[0])
         self.tot_scene_num = len(self.tasks)
   
     def _struct_scene_info(self):
@@ -197,63 +214,75 @@ class ScenarioManagerForSerial(ScenarioManagerBase):
             scene_json = json.load(f)
         map_path = os.path.join(self.map_dir, scene_json['map'])
         assert os.path.exists(map_path), f"Cannot find map folder {map_path}, please download the map first!"
+        output_name = f"{self.scenario_type}_{self.cur_scene_num}_{self.tasks[self.cur_scene_num]}_result.csv"
         scene_info = {
             'scenarioNum': self.cur_scene_num,
             'scenarioName': self.tasks[self.cur_scene_num].split('.json')[0],
-            'scenarioType': "SERIAL",
+            'scenarioType': self.scenario_type,
             'tess_file_path': self._find_file_with_suffix(map_path, '.tess'),
             'xodr_file_path': self._find_file_with_suffix(map_path, '.xodr'),
+            'output_path': os.path.join(self.output_path, output_name),
             'startPos': scene_json['startPos'],
             'targetPos': scene_json['targetPos'],
             'waypoints': scene_json['waypoints'],
+            'dt': None,
         }
         return scene_info
 
 
 class ScenarioManagerForReplay(ScenarioManagerBase):
-    def __init__(self, scenario_dir: str, tasks: [str], print_info: bool = False):
-        super().__init__(print_info)
+    def __init__(self, scenario_dir: str, tasks: [str], skip_exist: bool, print_info: bool):
+        super().__init__(skip_exist, print_info)
 
+        self.scenario_type = "REPLAY"
         self.task_dir = os.path.abspath(scenario_dir)
-        if tasks == None:
-            for scene_name in os.listdir(self.task_dir):
-                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
-                    self.tasks.append(scene_name)
-        else:
+        if tasks:
             for scene_name in tasks:
                 if os.path.exists(os.path.join(self.task_dir, scene_name)):
                     self.tasks.append(scene_name)
                 else:
                     print(f"[LOAD SENARIO ERROR]: Cannot find task {scene_name}, please check the task name and retry!")
+        else:
+            for scene_name in os.listdir(self.task_dir):
+                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
+                    self.tasks.append(scene_name)
         self.tot_scene_num = len(self.tasks)
 
     def _struct_scene_info(self):
         scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
+        output_name = f"{self.scenario_type}_{self.cur_scene_num}_{self.tasks[self.cur_scene_num]}_result.csv"
         scene_info = {
             'scenarioNum': self.cur_scene_num,
             'scenarioName': self.tasks[self.cur_scene_num],
-            'scenarioType': "REPLAY",
+            'scenarioType': self.scenario_type,
             'xodr_file_path': self._find_file_with_suffix(scene_dir, '.xodr'),
             'xosc_file_path': self._find_file_with_suffix(scene_dir, '.xosc'),
             'json_file_path': self._find_file_with_suffix(scene_dir, '.json'),
+            'output_path': os.path.join(self.output_path, output_name),
             'startPos': None,
             'targetPos': None,
             'dt': None,
         }
         return scene_info
 
-def scenarioManager(mode: str, tasks: [str], print_info: bool = False):
+
+def scenarioManager(mode: str, tasks: [str], skip_exist: bool = False, print_info: bool = False):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     task_dir = os.path.join(base_dir, 'scenario', mode.lower())
     if mode == 'FRAGMENT':
-        return ScenarioManagerForFragment(task_dir, tasks, print_info)
+        return ScenarioManagerForFragment(task_dir, tasks, skip_exist, print_info)
     elif mode == "SERIAL":
-        return ScenarioManagerForSerial(task_dir, tasks, print_info)
+        return ScenarioManagerForSerial(task_dir, tasks, skip_exist, print_info)
     elif mode == "REPLAY":
-        return ScenarioManagerForReplay(task_dir, tasks, print_info)
+        return ScenarioManagerForReplay(task_dir, tasks, skip_exist, print_info)
     else:
         raise RuntimeError("There is no valid mode, please choose in 'fragment' and 'serial'")
-            
+
+
 if __name__ == '__main__':
-    sm = scenarioManager('SERIAL', None, print_info=True)
+    sm = scenarioManager('SERIAL', None, skip_exist=True, print_info=True)
     print(sm.tasks)
+    sm.next()
+    sm.next()
+    sm.next()
+    sm.next()

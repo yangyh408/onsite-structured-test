@@ -11,14 +11,14 @@ def run(mode_config: dict, PLANNER: object) -> None:
     recorder = Recorder()
     planner = PLANNER()
 
-    sm = scenarioManager(mode='REPLAY', tasks=mode_config['tasks'], print_info=False)
+    sm = scenarioManager(mode='REPLAY', tasks=mode_config.get('tasks', []), skip_exist=mode_config.get('skipExist', False), print_info=False)
     while sm.next():
         # 记录模块初始化
         action = [0, 0]
         recorder.init()
         # 回放测试控制器初始化，并返回主车第一帧信息
         observation = controller.init(sm.cur_scene)
-        sm._print(is_print=True)
+        # sm._print(is_print=True)
         # 被测物根据场景信息进行初始化设置
         planner.init(sm.current_scene_info())
 

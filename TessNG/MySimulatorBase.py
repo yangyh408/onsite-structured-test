@@ -124,14 +124,19 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         vehicleTotal.vehicle_info = vehicleInfo
         vehicleTotal.light_info = {'green'}
 
-        vehicleTotal.test_info = {
-            "t": currentTestTime / 1000, 
-            "dt": self.dt,
-            "end": testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
+        if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 5000:
+            end = testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
                               vehicleInfo=vehicleInfo,
                               outOfTime=(currentTestTime/1000)>=self.maxTestTime,
                               outOfMap=self.outSideTessngNet
                               )
+        else:
+            end = -1
+        
+        vehicleTotal.test_info = {
+            "t": currentTestTime / 1000, 
+            "dt": self.dt,
+            "end": end
         }
         return vehicleTotal
 
