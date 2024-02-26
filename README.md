@@ -140,6 +140,10 @@
    4. 运行`main.py`进行测试
       > 首次运行TessNG时需要导入激活密钥，点击`导入激活码`后选择`src/JidaTraffic_key.key`激活，提升激活成功后关闭程序重新运行即可
    5. 在`outputs`文件夹中查看所有测试的轨迹输出
+   6. 生成docker镜像`docker build -t UserNameOfDocker/test-image-for-onsite:0.0.1 .`
+      > UserNameofDocker需要更换为在DockerHub上注册的用户名
+      test-image-for-onsite为镜像名（为防止他人抄袭或直接上传您编写的代码，请不要在相关内容中体现出 OnSite等比赛相关内容。可以采用密码生成器等手段，生成镜像名）
+      0.0.1：为镜像的tag，标注镜像的版本信息
 
 ### TessNG界面介绍
 ![TessNG_GUI](./src/tessng_GUI.png)
