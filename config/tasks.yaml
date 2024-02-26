@@ -1,16 +1,22 @@
 FRAGMENT:
   tasks:
+    - '0_76_merge_82'
+    - '5_23_straight_straight_24'
   dt: 0.1
   maxTestTime: 30
   skipExist: True
 
 SERIAL:
   tasks:
+    - 'serial_task_1'
+    - 'serial_task_2'
   dt: 0.05
   maxTestTime: 200
   skipExist: True
 
 REPLAY:
   tasks:
+    - '8_5_1_41'
+    - '5_519_merge_566'
   visualize: True
   skipExist: True

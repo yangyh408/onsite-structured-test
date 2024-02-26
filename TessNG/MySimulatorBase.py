@@ -219,9 +219,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
 
     def dealRecord(self):
         if self.scenario_manager.cur_scene_num >= 0:
-            output_dir = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
-            output_name =  f"{self.scenario_type}_{self.scenario_manager.cur_scene_num}_{self.scenario_manager.cur_scene['scenarioName']}_result.csv"
-            self.recorder.output(os.path.join(output_dir, output_name))
+            self.recorder.output(self.scenario_manager.cur_scene['output_path'])
                                            
     def afterStop(self):
         pass

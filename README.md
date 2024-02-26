@@ -1,4 +1,4 @@
-## 双向交互模块使用说明
+## 结构化测试模块使用说明
 
 ### 接入流程
 ![work_process](./src/onsite_tessng_process.png)
@@ -49,18 +49,45 @@
 
 ### 配置文件说明
    1. 测试任务配置`config/tasks.yaml`
+      ```yaml
+         FRAGMENT:
+            tasks:
+               - '0_76_merge_82'
+               - '5_23_straight_straight_24'
+            dt: 0.1
+            maxTestTime: 30
+            skipExist: True
+
+         SERIAL:
+            tasks:
+               - 'serial_task_1'
+               - 'serial_task_2'
+            dt: 0.05
+            maxTestTime: 200
+            skipExist: True
+
+         REPLAY:
+            tasks:
+               - '8_5_1_41'
+               - '5_519_merge_566'
+            visualize: True
+            skipExist: True
+      ```
       + 该配置文件可以分别指定三种测试模式的具体**测试方法和内容**
       + `REPLAY` 回放测试配置
          - `tasks`：指定测试任务，以列表形式给出。列表中每一项为测试场景名称，对应回放测试场景文件夹`senario/replay`下的二级文件夹名称
          - `visualize`：是否开启可视化界面(默认为False)
+         - `skipExist`：是否跳过outputs中已经有输出的场景(默认为False)
       + `FRAGMENT` 片段式双向交互测试配置
          - `tasks`：指定测试任务，以列表形式给出。列表中每一项为测试场景名称，片段式双向交互测试场景文件夹`senario/fragment`下的二级文件夹名称
          - `dt`：仿真测试频率(默认仿真时间间隔为0.05s)
          - `maxTestTime`: 单测试任务最大测试时长，当单个测试任务超过此时限时会被自动中断
+         - `skipExist`：是否跳过outputs中已经有输出的场景(默认为False)
       + `SERIAL` 无限历程双向交互测试配置
          - `tasks`：指定测试任务，以列表形式给出。列表中每一项为测试场景名称，无限里程双向交互测试任务文件夹`senario/serial/tasks`下json文件名称(不包含.json后缀)
          - `dt`：仿真测试频率(默认仿真时间间隔为0.05s)
          - `maxTestTime`: 单测试任务最大测试时长，当单个测试任务超过此时限时会被自动中断
+         - `skipExist`：是否跳过outputs中已经有输出的场景(默认为False)
 
 ### 规控算法编写说明
    用户需要在`planner`文件夹内新建文件夹并以`plannerBase.py->PlannerBase`作为基类编写自己的规划控制类
@@ -80,6 +107,7 @@
          - `startPos`: 列表，表示测试任务中主车的发车点x,y坐标
          - `targetPos`: 列表，表示测试任务的终点面域
          - `waypoints`: 列表，表示测试任务的参考轨迹点序列 *(仅当测试模式为无限里程双向交互测试时有值，其余测试模式下为空列表)*
+         - `dt`: 浮点型，表示当前任务仿真测试频率
    3. `act(self, observation: Observation) -> [float, float]`
       + 功能：响应函数，读入当前时刻的仿真环境状态信息，返回主车的控制量
       + 调用时间：在测试任务的每个测试时调用，调用次数与测试任务数量一致
@@ -140,10 +168,15 @@
    4. 运行`main.py`进行测试
       > 首次运行TessNG时需要导入激活密钥，点击`导入激活码`后选择`src/JidaTraffic_key.key`激活，提升激活成功后关闭程序重新运行即可
    5. 在`outputs`文件夹中查看所有测试的轨迹输出
-   6. 生成docker镜像`docker build -t UserNameOfDocker/test-image-for-onsite:0.0.1 .`
-      > UserNameofDocker需要更换为在DockerHub上注册的用户名
-      test-image-for-onsite为镜像名（为防止他人抄袭或直接上传您编写的代码，请不要在相关内容中体现出 OnSite等比赛相关内容。可以采用密码生成器等手段，生成镜像名）
-      0.0.1：为镜像的tag，标注镜像的版本信息
+   6. 如果在规控模块编写过程中需要引入其他python第三方库，需要重新导出并覆盖原本requirements.txt
+      `pip freeze > requirements.txt`
+   7. 生成docker镜像
+      `docker build -t <hub-user>/<repo-name>:<tag> .`
+      > **hub-user**为DockerHub上注册的用户名
+      **repo-name**为镜像名（为防止他人抄袭或直接上传您编写的代码，请不要在相关内容中体现出 OnSite等比赛相关内容。可以采用密码生成器等手段，生成镜像名）
+      **tag**：为镜像标签，标注镜像的版本信息
+   8. 上传docker镜像
+      `docker push <hub-user>/<repo-name>:<tag>`
 
 ### TessNG界面介绍
 ![TessNG_GUI](./src/tessng_GUI.png)

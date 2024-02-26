@@ -11,7 +11,7 @@ def run(mode_config: dict, PLANNER: object) -> None:
     recorder = Recorder()
     planner = PLANNER()
 
-    sm = scenarioManager(mode='REPLAY', tasks=mode_config.get('tasks', []), skip_exist=mode_config.get('skipExist', False), print_info=False)
+    sm = scenarioManager(mode='REPLAY', config=mode_config)
     while sm.next():
         # 记录模块初始化
         action = [0, 0]
@@ -26,9 +26,7 @@ def run(mode_config: dict, PLANNER: object) -> None:
             observation = controller.update_frame(observation)
             recorder.record(action, observation)
             if observation.test_info['end'] != -1:
-                output_dir = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
-                output_name = f"{sm.cur_scene['scenarioType']}_{sm.cur_scene['scenarioNum']}_{sm.cur_scene['scenarioName']}_result.csv"
-                recorder.output(os.path.join(output_dir, output_name))
+                recorder.output(sm.cur_scene['output_path'])
                 break
             action = planner.act(observation)
             observation = controller.update_ego(action, observation)

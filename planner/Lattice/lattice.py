@@ -15,6 +15,8 @@ import scipy.signal
 import scipy.optimize as opt
 from scipy.integrate import quad
 from scipy.interpolate import splrep, splev
+from planner.plannerBase import PlannerBase
+import pandas as pd
 
 # import random
 
@@ -1220,84 +1222,98 @@ def RefLine(origion, destination):
         planned_curve, _ = smooth_cv(np.array([origion, destination]))
         return planned_curve[:, 0], planned_curve[:, 1]
 
-def alg_1(obs, goal_x, goal_y):
-    # 主车和障碍物位置信息
-    ego_info = obs['vehicle_info']['ego']
-    # 初始化主车
-    x_ego, y_ego, v_ego, heading_ego = ego_info['x'], ego_info['y'], ego_info['v'], ego_info['yaw']
+class LATTICE(PlannerBase):
+    def __init__(self):
+        pass
 
-    # print(f'主车当前速度{v_ego}')
-    tp_list = [x_ego, y_ego, v_ego, 0, heading_ego, 0]  # from sensor actually, an example here
-    traj_point = TrajPoint(tp_list)  ### [x, y, v, a, theta, kappa]
+    def init(self, scenario_dict):
+        print("----------------------------LATTICE INIT----------------------------")
+        global origion, destination
+        origion = np.array([scenario_dict['startPos'][0], scenario_dict['startPos'][1], 0])
+        destination = np.array([scenario_dict['targetPos'][0][0], scenario_dict['targetPos'][0][1], 0])
 
-    # 路由点路径信息
-    global destination
-    origion = np.array([x_ego, y_ego, 0])
-    destination = np.array([np.mean(goal_x), np.mean(goal_y), 0])
-    # 测试
 
-    rx, ry = RefLine(origion, destination)
+    def act(self, observation):
+        control = self.alg_1(observation.vehicle_info,origion,destination)
+        return control
 
-    cts_points = np.array([rx, ry])
-    path_points = CalcRefLine(cts_points)
-    static_obstacles = []
-    for key in obs['vehicle_info']:
-        if key == 'ego':
-            continue
-        obstacles = obs['vehicle_info'][key]
-        static_obstacles.append(Obstacle(
-            [obstacles['x'], obstacles['y'], obstacles['v'], obstacles['length'], obstacles['width'], obstacles['yaw'],
-             'static']))
+    def alg_1(self,obs, goal_x, goal_y):
+        # 主车和障碍物位置信息
+        ego_info = obs['ego']
+        # 初始化主车
+        x_ego, y_ego, v_ego, heading_ego = ego_info['x'], ego_info['y'], ego_info['v'], ego_info['yaw']
 
-    for obstacle in static_obstacles:
-        obstacle.MatchPath(path_points)  ### 同样match障碍物与参考轨迹
+        # print(f'主车当前速度{v_ego}')
+        tp_list = [x_ego, y_ego, v_ego, 0, heading_ego, 0]  # from sensor actually, an example here
+        traj_point = TrajPoint(tp_list)  ### [x, y, v, a, theta, kappa]
 
-    traj_point.MatchPath(path_points)  # matching once is enough 将traj_point(单点)与path_points(序列)中最近的点匹配
-    samp_basis = SampleBasis(traj_point, theta_thr, ttcs)  ### 采样区间(类动作空间)
-    # print(samp_basis.dist_samp)
-    local_planner = LocalPlanner(traj_point, path_points, static_obstacles,
-                                 samp_basis)  ### 规划器 输入为目前位置 参考轨迹点 障碍物位置 采样空间
-    # print(local_planner.status, local_planner.to_stop)
-    traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    # 如果采样较少的情况未找到可行解，考虑扩大采样范围
-    if not traj_points_opt:
-        # print("扩大范围")
-        theta_thr_ = M_PI / 3
-        ttcs_ = [2, 3, 4, 5, 6, 7, 8]
-        # ttcs_ = [-3, -2, -1, 0, 1, 2]
-        samp_basis = SampleBasis(traj_point, theta_thr_, ttcs_)
-        local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+        # 路由点路径信息
+        # global destination
+        # origion = np.array([x_ego, y_ego, 0])
+        # destination = np.array([np.mean(goal_x), np.mean(goal_y), 0])
+        # 测试
+        rx, ry = RefLine(origion, destination)
+
+        cts_points = np.array([rx, ry])
+        path_points = CalcRefLine(cts_points)
+        static_obstacles = []
+        for key in obs:
+            if key == 'ego':
+                continue
+            obstacles = obs[key]
+            static_obstacles.append(Obstacle(
+                [obstacles['x'], obstacles['y'], obstacles['v'], obstacles['length'], obstacles['width'], obstacles['yaw'],
+                 'static']))
+
+        for obstacle in static_obstacles:
+            obstacle.MatchPath(path_points)  ### 同样match障碍物与参考轨迹
+
+        traj_point.MatchPath(path_points)  # matching once is enough 将traj_point(单点)与path_points(序列)中最近的点匹配
+        samp_basis = SampleBasis(traj_point, theta_thr, ttcs)  ### 采样区间(类动作空间)
+        # print(samp_basis.dist_samp)
+        local_planner = LocalPlanner(traj_point, path_points, static_obstacles,
+                                     samp_basis)  ### 规划器 输入为目前位置 参考轨迹点 障碍物位置 采样空间
+        # print(local_planner.status, local_planner.to_stop)
         traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    ### 扩大范围还不行就准备紧急停车 结果表明这个模块有问题 紧急停车总是不能完全停下
-    if not traj_points_opt:
-        # print("紧急停车")
-        local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
-        local_planner.status = 'brake'
-        traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    else:  ### 正常情况下在正常采样空间内如果有opt 就将opt规划出的点作为下一时刻的traj
-        traj_points = []
-        for tp_opt in traj_points_opt:
-            traj_points.append([tp_opt.x, tp_opt.y, tp_opt.v, tp_opt.a, tp_opt.theta, tp_opt.kappa])
-    ### traj这里就是用于画图 位置变化即从当前位置(traj_points_opt[0])到下一时刻位置(traj_points_opt[1])
+        # 如果采样较少的情况未找到可行解，考虑扩大采样范围
+        if not traj_points_opt:
+            # print("扩大范围")
+            theta_thr_ = M_PI / 3
+            ttcs_ = [2, 3, 4, 5, 6, 7, 8]
+            # ttcs_ = [-3, -2, -1, 0, 1, 2]
+            samp_basis = SampleBasis(traj_point, theta_thr_, ttcs_)
+            local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+            traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
+        ### 扩大范围还不行就准备紧急停车 结果表明这个模块有问题 紧急停车总是不能完全停下
+        if not traj_points_opt:
+            # print("紧急停车")
+            local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+            local_planner.status = 'brake'
+            traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
+        else:  ### 正常情况下在正常采样空间内如果有opt 就将opt规划出的点作为下一时刻的traj
+            traj_points = []
+            for tp_opt in traj_points_opt:
+                traj_points.append([tp_opt.x, tp_opt.y, tp_opt.v, tp_opt.a, tp_opt.theta, tp_opt.kappa])
+        ### traj这里就是用于画图 位置变化即从当前位置(traj_points_opt[0])到下一时刻位置(traj_points_opt[1])
 
-    if v_ego < 2:
-        acc_target = 1
-    else:
+        if v_ego < 2:
+            acc_target = 1
+        else:
+            try:
+                acc_target = traj_points_opt[1].a  # 加速度
+            except:
+                acc_target = 0
         try:
-            acc_target = traj_points_opt[1].a  # 加速度
+            wheel_target = traj_points_opt[1].theta / 180 * 3.14  # 方向盘转角
         except:
-            acc_target = 0
-    try:
-        wheel_target = traj_points_opt[1].theta / 180 * 3.14  # 方向盘转角
-    except:
-        wheel_target = 0
+            wheel_target = 0
 
-    if acc_target < -3:
-        acc_target = -3
-    if acc_target > 3:
-        acc_target = 3
+        if acc_target < -3:
+            acc_target = -3
+        if acc_target > 3:
+            acc_target = 3
 
-    # wheel_target = traj_points_opt[1].theta - heading_ego  # 方向盘的转角是轨迹的航向角的差值
+        # wheel_target = traj_points_opt[1].theta - heading_ego  # 方向盘的转角是轨迹的航向角的差值
 
-    drivecontroll = [acc_target, wheel_target]  # 最终返回控制信息
-    return drivecontroll
+        drivecontrol = [acc_target, wheel_target]  # 最终返回控制信息
+        return drivecontrol
