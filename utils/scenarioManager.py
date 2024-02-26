@@ -96,7 +96,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
 
         self.task_dir = os.path.abspath(scenario_dir)
         tasks = config.get('tasks', [])
-        self.dt = config.get('dt', 0.1)
+        self.dt = config.get('dt', 0.05)
         if tasks:
             for scene_name in tasks:
                 if os.path.exists(os.path.join(self.task_dir, scene_name)):
@@ -202,7 +202,7 @@ class ScenarioManagerForSerial(ScenarioManagerBase):
         self.task_dir = os.path.join(scenario_dir, 'tasks')
 
         tasks = config.get('tasks', [])
-        self.dt = config.get('dt', 0.1)
+        self.dt = config.get('dt', 0.05)
 
         if tasks:
             for task in tasks:
