@@ -1,11 +1,12 @@
-FROM cyz713docker/onsite:basic-dev
+FROM yangyh408/onsite-structured-test:basic-image
 
 ENV LANG C.UTF-8
 RUN mkdir ./outputs
 COPY planner ./planner
 COPY requirements.txt ./
-COPY TessNG/Cert/_cert ./TessNG/Cert
-RUN python -m pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple --no-cache-dir
+RUN python -m pip install -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple --no-cache-dir
 VOLUME ["/outputs"]
-ENTRYPOINT ["./run.sh"]
+RUN chmod -R 777 ./*
+RUN cp -r /OnSite/TessNG/. /usr/lib
+ENTRYPOINT [ "python", "/OnSite/main.py" ]
 
