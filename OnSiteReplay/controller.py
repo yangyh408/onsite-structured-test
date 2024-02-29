@@ -435,7 +435,7 @@ class ReplayController():
         return observation
     
     def update_ego(self, action: list, observation: Observation) -> Observation:
-        action = self._action_cheaker(action)
+        # action = self._action_cheaker(action)
         observation = self._update_ego_and_t(action, observation)
         return observation
 

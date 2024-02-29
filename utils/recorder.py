@@ -68,24 +68,16 @@ class Recorder:
     def __init__(self):
         self.end_status = None
         self.data = None
-        self.start_record = False
         self.init()
 
     def init(self):
-        self.start_record = False
         self.end_status = -1
         self.data = DataRecord()
 
     def record(self, action, observation):
-        if not self.start_record:
-            self._check_start(observation)
-        if self.end_status == -1 and self.start_record:
+        if self.end_status == -1:
             self.data.add_data(action, observation)
             self.end_status = observation.test_info['end']
-
-    def _check_start(self, observation):
-        if observation.vehicle_info.get('ego') is not None:
-            self.start_record = True
     
     def output(self, output_path):
         if not os.path.exists(os.path.dirname(output_path)):

@@ -55,7 +55,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 场景解析锁
         self.scenarioLock = 0
         # 主车控制量
-        self.action = [0, 0]
+        self.action = [float('nan'), float('nan')]
         # 下一帧主车信息
         self.nextEgoInfo = {}
         # 启动监测线程
@@ -122,7 +122,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         if self.nextEgoInfo:
             vehicleInfo[self.EgoName] = self.nextEgoInfo
         vehicleTotal.vehicle_info = vehicleInfo
-        vehicleTotal.light_info = {'green'}
+        vehicleTotal.light_info = {}
 
         if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 5000:
             end = testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
@@ -211,7 +211,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.mainStep(simuiface, netiface)
 
     def clearLastTest(self):
-        self.action = [0, 0]
+        self.action = [float('nan'), float('nan')]
         self.nextEgoInfo = dict()
         self.vehicleMap = dict()
         self.createCarLock = 0

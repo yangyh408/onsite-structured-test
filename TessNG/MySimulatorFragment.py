@@ -67,25 +67,25 @@ class MySimulatorFragment(MySimulatorBase):
 
     def mainStep(self, simuiface, netiface):
         simuTime = simuiface.simuTimeIntervalWithAcceMutiples()
-        batchNum = simuiface.batchNumber()
+        # batchNum = simuiface.batchNumber()
         if simuTime >= self.preheatingTime * 1000:
             if not self.createCarLock:
                 for veh_id, veh_info in self.scenario_manager.cur_scene['vehicle_init_status'].items():
                     self.createCar(simuiface, netiface, veh_info)
                 self.createCarLock = 1
 
-            # observation 用于轨迹记录
             self.observation = self.tessngServerMsg(simuiface, simuTime)
-            # print(self.observation.vehicle_info)
-            self.recorder.record(self.action, self.observation)
-            if getVehicleInfo(self.observation):
-                if self.observation.test_info['end'] == -1:
-                    self.action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+            if self.observation.test_info['end'] == -1:
+                if self.observation.vehicle_info.get('ego') is not None:
+                    self.recorder.record(self.action, self.observation)
+                    new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+                    self.action = check_action(self.observation.test_info['dt'], self.action, new_action)
                     self.nextEgoInfo = updateEgoPos(self.action, self.observation)
                     paintPos["pos"] = self.nextEgoInfo
-                # print("算出新点位", self.nextEgoInfo, action)
-                else:
-                    self.finishTest = True
+                # else:
+                #     print("===================Ego not found.===================")
+            else:
+                self.finishTest = True
 
     @staticmethod
     def openNetFile(netiface: Tessng.NetInterface, scene_info: dict):

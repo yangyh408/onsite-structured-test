@@ -73,17 +73,19 @@ class MySimulatorSerial(MySimulatorBase):
             if not self.createCarLock:
                 self.createCar(simuiface, netiface, self.scenario_manager.cur_scene['startPos'], 10, vehicleTypeCode=1)
                 self.createCarLock = 1
-            # observation 用于轨迹记录
+            
             self.observation = self.tessngServerMsg(simuiface, simuTime)
-            self.recorder.record(self.action, self.observation)
-            if getVehicleInfo(self.observation):
-                if self.observation.test_info['end'] == -1:
-                    self.action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+            if self.observation.test_info['end'] == -1:
+                if self.observation.vehicle_info.get('ego') is not None:
+                    self.recorder.record(self.action, self.observation)
+                    new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+                    self.action = check_action(self.observation.test_info['dt'], self.action, new_action)
                     self.nextEgoInfo = updateEgoPos(self.action, self.observation)
                     paintPos["pos"] = self.nextEgoInfo
-                # print("算出新点位", self.nextEgoInfo, self.action)
-                else:
-                    self.finishTest = True
+                # else:
+                #     print("===================Ego not found.===================")
+            else:
+                self.finishTest = True
 
     def afterStop(self):
         self.finishTest = False
