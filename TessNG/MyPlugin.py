@@ -4,6 +4,7 @@ from MyNet import MyNet
 from TessNG.MySimulatorSerial import MySimulatorSerial
 from TessNG.MySimulatorFragment import MySimulatorFragment
 from TessNG.MySimulatorCreateTess import MySimulatorCreateTess
+from TessNG.MySimulatorCreateWaypoints import MySimulatorCreateWaypoints
 
 # 用户插件，继承自TessPlugin
 class MyPlugin(TessPlugin):
@@ -59,6 +60,8 @@ class MyPlugin(TessPlugin):
             self.mSimuInf = MySimulatorFragment(self.config, self.planner)
         elif self.mode == 'CREATE_TESS':
             self.mSimuInf = MySimulatorCreateTess(self.config)
+        elif self.mode == 'CREATE_WAYPOINTS':
+            self.mSimuInf = MySimulatorCreateWaypoints(self.config)
         self.mSimuInf.signalRunInfo.connect(self.examleWindow.showRunInfo)
         iface = tngIFace()
         win = iface.guiInterface().mainWindow()
