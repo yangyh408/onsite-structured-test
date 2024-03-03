@@ -99,15 +99,32 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         self.dt = config.get('dt', 0.05)
         if tasks:
             for scene_name in tasks:
-                if os.path.exists(os.path.join(self.task_dir, scene_name)):
-                    self.tasks.append(scene_name)
+                scene_path = os.path.join(self.task_dir, scene_name)
+                if os.path.exists(scene_path):
+                    if self._check_file_integrity(scene_path):
+                        self.tasks.append(scene_name)
+                    else:
+                        print(f"[LOAD SENARIO ERROR]: Check file integrity in {scene_name}, cannot find all necessary files!")
                 else:
                     print(f"[LOAD SENARIO ERROR]: Cannot find task {scene_name}, please check the task name and retry!")
         else:
             for scene_name in os.listdir(self.task_dir):
-                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(os.path.join(self.task_dir, scene_name)):
-                    self.tasks.append(scene_name)
+                scene_path = os.path.join(self.task_dir, scene_name)
+                if not scene_name.startswith('.') and scene_name != '__pycache__' and os.path.isdir(scene_path):
+                    if self._check_file_integrity(scene_path):
+                        self.tasks.append(scene_name)
+                    else:
+                        print(f"[LOAD SENARIO ERROR]: Check file integrity in {scene_name}, cannot find all necessary files!")
         self.tot_scene_num = len(self.tasks)
+
+    def _check_file_integrity(self, scene_path):
+        if not self._find_file_with_suffix(scene_path, '.xodr'):
+            return False
+        if not self._find_file_with_suffix(scene_path, '.xosc'):
+            return False
+        if not self._find_file_with_suffix(scene_path, '.tess'):
+            return False
+        return True
 
     def _struct_scene_info(self):
         scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
@@ -288,7 +305,12 @@ def scenarioManager(mode: str, config: dict):
 
 
 if __name__ == '__main__':
-    sm = scenarioManager('SERIAL', None, skip_exist=True, print_info=True)
+    config = {
+        'skipExist': True,
+        'dt': 0.1,
+        'tasks': []
+    }
+    sm = scenarioManager('FRAGMENT', config)
     print(sm.tasks)
     sm.next()
     sm.next()

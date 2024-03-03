@@ -220,11 +220,9 @@ def getTessNGCarLength(length: float) -> int:
         range(11, 15): 2,
         range(6, 10): 4,
     }
-
     for key, result in result_mapping.items():
         if length in key:
             return result
-
     return 1
 
 
