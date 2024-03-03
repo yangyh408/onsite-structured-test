@@ -16,11 +16,11 @@ from MyPlugin import MyPlugin
 from TESS_API_EXAMPLE import *
 
 
-def startTessNG(mode: str, mode_config: dict, planner: object):
+def startTessNG(mode: str, mode_config: dict, planner: object, auto_run: bool):
     app = QApplication()
 
     config = {'__workspace': BASE_DIR,
-              '__simuafterload': True,
+              '__simuafterload': auto_run,
               '__custsimubysteps': False
               }
     plugin = MyPlugin(mode, mode_config, planner)
@@ -70,8 +70,8 @@ def checkTessngTest(tessngPid):
         except FileNotFoundError:
             pass
 
-def run(mode: str, mode_config: dict, planner: object) -> None:
-    tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner))
+def run(mode: str, mode_config: dict, planner: object, auto_run: bool=True) -> None:
+    tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, auto_run))
     tessng_p.start()
     pid = tessng_p.pid
     # 观察Tessng是否需要结束

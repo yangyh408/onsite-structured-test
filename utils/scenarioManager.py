@@ -97,6 +97,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         self.task_dir = os.path.abspath(scenario_dir)
         tasks = config.get('tasks', [])
         self.dt = config.get('dt', 0.05)
+        self.tasks_without_tess = []    # 用于记录没有tess文件的任务
         if tasks:
             for scene_name in tasks:
                 scene_path = os.path.join(self.task_dir, scene_name)
@@ -104,6 +105,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
                     if self._check_file_integrity(scene_path):
                         self.tasks.append(scene_name)
                     else:
+                        self.tasks_without_tess.append(scene_name)
                         print(f"[LOAD SENARIO ERROR]: Check file integrity in {scene_name}, cannot find all necessary files!")
                 else:
                     print(f"[LOAD SENARIO ERROR]: Cannot find task {scene_name}, please check the task name and retry!")
@@ -114,6 +116,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
                     if self._check_file_integrity(scene_path):
                         self.tasks.append(scene_name)
                     else:
+                        self.tasks_without_tess.append(scene_name)
                         print(f"[LOAD SENARIO ERROR]: Check file integrity in {scene_name}, cannot find all necessary files!")
         self.tot_scene_num = len(self.tasks)
 

@@ -1,0 +1,54 @@
+import os
+import json
+
+from DockWidget import *
+from Tessng import *
+import Tessng
+
+from createTess.opendrive2tess import opendrive2tess
+from utils.scenarioManager import scenarioManager
+
+# 仿真测试模块
+class MySimulatorCreateTess(QObject, PyCustomerSimulator):
+    signalRunInfo = Signal(str)
+    forStopSimu = Signal()
+    forReStartSimu = Signal()
+    forPauseSimu = Signal()
+
+    def __init__(self, config: dict):
+        QObject.__init__(self)
+        PyCustomerSimulator.__init__(self)
+
+        iface = tessngIFace()
+        simuiface = iface.simuInterface()
+        netiface = iface.netInterface()
+
+        self.scenario_manager = scenarioManager(mode='FRAGMENT', config=config)
+
+        failed_tasks = []
+
+        for scene_name in self.scenario_manager.tasks_without_tess:
+            try:
+                task_dir = os.path.join(self.scenario_manager.task_dir, scene_name)
+                new_tess_path = os.path.join(task_dir, f"{scene_name}.tess")
+                netiface.createEmptyNetFile(new_tess_path)
+                netiface.openNetFle(new_tess_path)
+                parms = {
+                    "file_path": self.scenario_manager._find_file_with_suffix(task_dir, 'xodr'),
+                    "step_length": 1,
+                    "lane_types": ["机动车道", "非机动车道", "人行道", "应急车道"]
+                    }
+                opendrive2tess(netiface, parms)
+                netiface.saveRoadNet()
+            except Exception as e:
+                failed_tasks.append(scene_name)
+                print(f"Error when creating tess in {scene_name}: {repr(e)}")
+        print('*'*50)
+        print(f"SUCCESS CREATE TESS {len(self.scenario_manager.tasks_without_tess) - len(failed_tasks)}/{len(self.scenario_manager.tasks_without_tess)}")
+        if failed_tasks:
+            print(f"Failed tasks: {failed_tasks}")
+        print('*'*50)
+        pidDict = {"done": 1}
+        with open("./cache.json", "w") as f:
+            json.dump(pidDict, f)
+        return 
