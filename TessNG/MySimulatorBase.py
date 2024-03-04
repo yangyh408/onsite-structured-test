@@ -1,3 +1,4 @@
+import os
 import math
 import time
 import platform
@@ -9,7 +10,7 @@ import Tessng
 
 from utils.recorder import Recorder
 from utils.observation import Observation
-from utils.functions import *
+from utils.functions import convertAngle, calcDistance, testFinish, check_action, updateEgoPos
 from utils.netStruct import paintPos, startEndPos, waypoints
 
 # 仿真测试模块
@@ -189,7 +190,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                     'x': round(p2m(vehicleStatus.mPoint.x()), 3),
                     'y': round(-p2m(vehicleStatus.mPoint.y()), 3),
                     'v': round(p2m(vehicleStatus.mrSpeed), 3),
-                    'a': round(judgeAcc(p2m(vehicleStatus.mrAcce)), 3),
+                    'a': round(p2m(vehicleStatus.mrAcce), 3),
                     'yaw': round(math.radians(convertAngle(vehicleStatus.mrAngle)), 3),
                 }
         if self.nextEgoInfo:
