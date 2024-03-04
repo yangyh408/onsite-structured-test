@@ -10,7 +10,7 @@ def main():
         tasks = yaml.safe_load(f)
     for mode, config in tasks.items():
         if mode != 'REPLAY':
-            TessNG.run(mode, config, PLANNER)
+            TessNG.run(mode, config, PLANNER, auto_run=False)
         else:
             OnSiteReplay.run(config, PLANNER)
 

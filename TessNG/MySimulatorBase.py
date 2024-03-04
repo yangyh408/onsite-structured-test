@@ -1,7 +1,7 @@
 import math
-import json
 import time
-import _thread
+import platform
+import signal
 
 from DockWidget import *
 from Tessng import *
@@ -61,7 +61,10 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 下一帧主车信息
         self.nextEgoInfo = {}
         # 启动监测线程
-        _thread.start_new_thread(self.updateSimuStatus, ())
+        # _thread.start_new_thread(self.updateSimuStatus, ())
+        iface = tessngIFace()
+        simuiface = iface.simuInterface()
+        simuiface.startSimu()
 
     def updateSimuStatus(self):
         iface = tessngIFace()
@@ -90,10 +93,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         simuiface.setSimuAccuracy(1 / self.dt)
-        startEndPos["startPos"] = self.scenario_manager.cur_scene['startPos']
-        startEndPos["endPos"] = self.scenario_manager.cur_scene['targetPos']
-        if self.scenario_manager.cur_scene.get('waypoints'):
-            waypoints["waypoints"] = self.scenario_manager.cur_scene['waypoints']
+        startEndPos["startPos"] = self.scenario_manager.cur_scene.get('startPos', [])
+        startEndPos["endPos"] = self.scenario_manager.cur_scene.get('targetPos', [])
+        waypoints["waypoints"] = self.scenario_manager.cur_scene.get('waypoints', [])
 
         return True
 
@@ -239,6 +241,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         pass
 
     def mainStep(self, simuiface, netiface):
+        if self.startTest:
+            self.startTest = False
+            self.forStopSimu.emit()
         simuTime = simuiface.simuTimeIntervalWithAcceMutiples()
         # batchNum = simuiface.batchNumber()
         if simuTime >= self.preheatingTime * 1000:
@@ -257,7 +262,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                 # else:
                 #     print("===================Ego not found.===================")
             else:
-                self.finishTest = True
+                if not self.finishTest:
+                    self.finishTest = True
+                    self.forStopSimu.emit()
 
     def afterOneStep(self):
         iface = tessngIFace()
@@ -275,6 +282,19 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def _dealRecord(self):
         if self.scenario_manager.cur_scene_num >= 0:
             self.recorder.output(self.scenario_manager.cur_scene['output_path'])
+
+    @staticmethod
+    def kill_process(targetPid):
+        if platform.system().lower() == "windows":
+            kill_sig = signal.SIGINT
+        elif platform.system().lower() == "linux":
+            kill_sig = signal.SIGKILL
+        try:
+            print(f"[KILL] shutting down TessNG with pid-{targetPid}")
+            os.kill(targetPid, kill_sig)
+        except Exception as e:
+            print(f"[ERROR] killing {targetPid} failed: {e}")
+            
                                            
     def afterStop(self):
         self.finishTest = False
@@ -293,9 +313,5 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             simuiface.startSimu()
         else:
             print(self.scenario_manager.record)
-            pidDict = {"done": 1}
-            with open("./cache.json", "w") as f:
-                json.dump(pidDict, f)
-            print("All test finished.")
-            return
+            self.kill_process(os.getpid())
 

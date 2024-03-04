@@ -54,7 +54,6 @@ class MyPlugin(TessPlugin):
         self.initGui()
         self.mNetInf = MyNet()
         if self.mode == 'SERIAL':
-            print(self.config)
             self.mSimuInf = MySimulatorSerial(self.config, self.planner)
         elif self.mode == 'FRAGMENT':
             self.mSimuInf = MySimulatorFragment(self.config, self.planner)

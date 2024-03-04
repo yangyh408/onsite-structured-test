@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # 添加本开发包绝对路径到搜索路径中
-import json
-import time
-import signal
-import _thread
-import platform
 from multiprocessing import Process
 
 import os
@@ -32,50 +27,9 @@ def startTessNG(mode: str, mode_config: dict, planner: object, auto_run: bool):
     else:
         sys.exit(app.exec_())
 
-def kill(targetPid):
-    if platform.system().lower() == "windows":
-        try:
-            os.kill(targetPid, signal.SIGINT)
-            print(f"kill {targetPid}")
-        except OSError:
-            pass
-        except TypeError:
-            pass
-    elif platform.system().lower() == "linux":
-        try:
-            os.kill(targetPid, signal.SIGKILL)
-            print(f"kill {targetPid}")
-        except OSError:
-            pass
-        except TypeError:
-            pass
-
-def checkTessngTest(tessngPid):
-    pidDict = {"done": 0}
-    # 存入上一次启动的进程
-    with open("./cache.json", "w") as f:
-        json.dump(pidDict, f)
-    while True:
-        try:
-            with open("./cache.json", 'r') as load_f:
-                load_dict = json.load(load_f)
-            done = load_dict['done']
-            if done == 1:
-                print("Waiting for shutdown...")
-                time.sleep(5)
-                kill(tessngPid)
-                break
-            else:
-                time.sleep(2)
-        except FileNotFoundError:
-            pass
-
 def run(mode: str, mode_config: dict, planner: object, auto_run: bool=True) -> None:
     tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, auto_run))
     tessng_p.start()
-    pid = tessng_p.pid
-    # 观察Tessng是否需要结束
-    _thread.start_new_thread(checkTessngTest, (pid,))
     tessng_p.join()
 
 if __name__ == '__main__':

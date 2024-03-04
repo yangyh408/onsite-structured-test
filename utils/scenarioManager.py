@@ -17,7 +17,7 @@ class ScenarioManagerBase():
         self.scenario_type = ""
         self.tasks = []
         self.cur_scene_num = -1
-        self.cur_scene = None
+        self.cur_scene = {}
         self.output_path = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'outputs'))
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)

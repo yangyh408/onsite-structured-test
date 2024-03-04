@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import PySide2
 from PySide2.QtCore import Qt, QPoint
 from PySide2.QtGui import QPen, QFont, QColor, QBrush
 from PySide2.QtWidgets import QGraphicsTextItem, QGraphicsRectItem, QGraphicsEllipseItem
@@ -198,3 +197,4 @@ class MyNet(PyCustomerNet):
             failedItem.setFont(QFont("黑体", 20))
             failedItem.setDefaultTextColor(QColor(255, 0, 0))
             scene.addItem(failedItem)
+        return False
