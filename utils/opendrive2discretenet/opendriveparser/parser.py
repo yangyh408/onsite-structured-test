@@ -2,35 +2,34 @@
 
 import numpy as np
 from lxml import etree
-import sys
-sys.path.append('../../..')
-from onsite.opendrive2discretenet.opendriveparser.elements.opendrive import OpenDrive, Header
-from onsite.opendrive2discretenet.opendriveparser.elements.road import Road
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLink import (
+
+from .elements.opendrive import OpenDrive, Header
+from .elements.road import Road
+from .elements.roadLink import (
     Predecessor as RoadLinkPredecessor,
     Successor as RoadLinkSuccessor,
     Neighbor as RoadLinkNeighbor,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.roadtype import (
+from .elements.roadtype import (
     RoadType,
     Speed as RoadTypeSpeed,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.roadElevationProfile import (
+from .elements.roadElevationProfile import (
     ElevationRecord as RoadElevationProfile,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLateralProfile import (
+from .elements.roadLateralProfile import (
     Superelevation as RoadLateralProfileSuperelevation,
     Crossfall as RoadLateralProfileCrossfall,
     Shape as RoadLateralProfileShape,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLanes import (
+from .elements.roadLanes import (
     LaneOffset as RoadLanesLaneOffset,
     Lane as RoadLaneSectionLane,
     LaneSection as RoadLanesSection,
     LaneWidth as RoadLaneSectionLaneWidth,
     LaneBorder as RoadLaneSectionLaneBorder,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.junction import (
+from .elements.junction import (
     Junction,
     Connection as JunctionConnection,
     LaneLink as JunctionConnectionLaneLink,

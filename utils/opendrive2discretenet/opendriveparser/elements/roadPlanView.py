@@ -3,7 +3,7 @@
 from typing import Tuple
 import numpy as np
 
-from onsite.opendrive2discretenet.opendriveparser.elements.geometry import (
+from .geometry import (
     Geometry,
     Line,
     Spiral,

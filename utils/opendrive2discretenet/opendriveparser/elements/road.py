@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from onsite.opendrive2discretenet.opendriveparser.elements.roadPlanView import PlanView
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLink import Link
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLanes import Lanes
-from onsite.opendrive2discretenet.opendriveparser.elements.roadElevationProfile import (
+from .roadPlanView import PlanView
+from .roadLink import Link
+from .roadLanes import Lanes
+from .roadElevationProfile import (
     ElevationProfile,
 )
-from onsite.opendrive2discretenet.opendriveparser.elements.roadLateralProfile import LateralProfile
-from onsite.opendrive2discretenet.opendriveparser.elements.junction import Junction
+from .roadLateralProfile import LateralProfile
+from .junction import Junction
 
 
 class Road:

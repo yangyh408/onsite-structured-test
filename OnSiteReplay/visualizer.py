@@ -16,9 +16,9 @@ class Visualizer():
         self.control_info = None
 
     def init(self, control_info):
-        self.control_info = control_info
         if not self.visualize:
             return
+        self.control_info = control_info
         # 测试信息
         self.scenario_name = control_info.test_setting['scenario_name']
         self.scenario_type = control_info.test_setting['scenario_type']
@@ -155,7 +155,6 @@ class Visualizer():
             self.axobject.annotate("B" + numeric_part, (x, y))
         elif key[0:3] == 'ped':
             self.axobject.annotate("P" + numeric_part, (x, y))
-
 
     def _plot_warning_signal(self, observation: Observation, c='red'):
         '''绘制主车碰撞时的提醒标志

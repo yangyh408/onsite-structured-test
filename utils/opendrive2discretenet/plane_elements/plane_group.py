@@ -2,7 +2,7 @@
 
 from typing import Tuple
 import numpy as np
-from onsite.opendrive2discretenet.discrete_network import DiscreteLane
+from ..discrete_network import DiscreteLane
 
 
 class ParametricLaneGroup:

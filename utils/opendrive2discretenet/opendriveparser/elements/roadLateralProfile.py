@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from onsite.opendrive2discretenet.opendriveparser.elements.road_record import RoadRecord
+from .road_record import RoadRecord
 
 
 class LateralProfile:

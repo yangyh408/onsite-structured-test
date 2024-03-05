@@ -4,8 +4,7 @@ import xml.etree.ElementTree as ET
 from visualizer import Visualizer
 from utils.observation import Observation
 from utils.functions import detectCollision, is_point_inside_rect
-from opendrive2discretenet.opendriveparser.parser import parse_opendrive
-from opendrive2discretenet.network import Network
+from utils.opendrive2discretenet import parse_opendrive
 
 import xml.dom.minidom
 from lxml import etree
@@ -366,44 +365,18 @@ class ReplayParser():
 
     def _parse_opendrive(self, path_opendrive: str) -> None:
         """
-        解析opendrive路网的信息，存储到self.replay_info.road_info。
+        解析opendrive路网的信息，存储到self.replay_info.road_info
         """
-        with open(path_opendrive, 'r', encoding='utf-8') as fh:
-            root = etree.parse(fh).getroot()
-        #fh = open(path_opendrive, "r")
-        # 返回OpenDrive类的实例对象（经过parser.py解析）
-        #root = etree.parse(fh).getroot()
-        openDriveXml = parse_opendrive(root)
-        fh.close()
-
-        # 将OpenDrive类对象进一步解析为参数化的Network类对象，以备后续转化为DiscreteNetwork路网并可视化
-        self.loadedRoadNetwork = Network()
-        self.loadedRoadNetwork.load_opendrive(openDriveXml)
-
-        """将解析完成的Network类对象转换为DiscreteNetwork路网，其中使用的只有路网中各车道两侧边界的散点坐标
-            车道边界点通过线性插值的方式得到，坐标点储存在<DiscreteNetwork.discretelanes.left_vertices/right_vertices> -> List"""
-
-        open_drive_info = self.loadedRoadNetwork.export_discrete_network(
-            filter_types=["driving","biking", "onRamp", "offRamp", "exit", "entry"])  # -> <class> DiscreteNetwork
-        self.replay_info.road_info = open_drive_info
+        self.replay_info.road_info = parse_opendrive(path_opendrive)
 
         # 求出一个包含所有地图的矩形
         points = np.empty(shape=[0, 2])
-        for discrete_lane in open_drive_info.discretelanes:
+        for discrete_lane in self.replay_info.road_info.discretelanes:
             points = np.concatenate(
                 [discrete_lane.left_vertices, discrete_lane.right_vertices, discrete_lane.center_vertices, points],
                 axis=0)
         self.replay_info.test_setting['map_range']['x'] = [np.min(points[:, 0]), np.max(points[:, 0])]
         self.replay_info.test_setting['map_range']['y'] = [np.min(points[:, 1]), np.max(points[:, 1])]
-        # 记录地图类型
-        name = root.find('header').attrib['name']
-        if name in ['highway','highD']:
-            self.replay_info.test_setting['map_type'] = "highway"
-        elif name in ['','SinD']:
-            self.replay_info.test_setting['map_type'] = "intersection"
-        elif name in ['NDS_ramp']:
-            self.replay_info.test_setting['map_type'] = 'ramp'
-
 
 class ReplayController():
     def __init__(self, visualize=False):

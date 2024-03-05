@@ -3,13 +3,13 @@
 """Module for logic behind converting OpenDrive to ParametricLanes."""
 
 from typing import Tuple, List
-from onsite.opendrive2discretenet.plane_elements.plane import (
+from .plane_elements.plane import (
     ParametricLane,
     ParametricLaneBorderGroup,
 )
-from onsite.opendrive2discretenet.plane_elements.plane_group import ParametricLaneGroup
-from onsite.opendrive2discretenet.plane_elements.border import Border
-from onsite.opendrive2discretenet.utils import encode_road_section_lane_width_id
+from .plane_elements.plane_group import ParametricLaneGroup
+from .plane_elements.border import Border
+from .utils import encode_road_section_lane_width_id
 
 
 class OpenDriveConverter:

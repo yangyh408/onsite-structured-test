@@ -4,11 +4,11 @@
 """Module to contain Network which can load an opendrive object and then export
 to lanelets. Iternally, the road network is represented by ParametricLanes."""
 
-from onsite.opendrive2discretenet.discrete_network import *
-from onsite.opendrive2discretenet.opendriveparser.elements.opendrive import OpenDrive
+from .discrete_network import *
+from .opendriveparser.elements.opendrive import OpenDrive
 
-from onsite.opendrive2discretenet.utils import encode_road_section_lane_width_id
-from onsite.opendrive2discretenet.converter import OpenDriveConverter
+from .utils import encode_road_section_lane_width_id
+from .converter import OpenDriveConverter
 
 
 def convert_to_new_lanelet_id(old_lanelet_id: str, ids_assigned: dict) -> int:

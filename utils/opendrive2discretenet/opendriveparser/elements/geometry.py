@@ -2,7 +2,7 @@
 
 import abc
 import numpy as np
-from onsite.opendrive2discretenet.opendriveparser.elements.eulerspiral import EulerSpiral
+from .eulerspiral import EulerSpiral
 
 
 class Geometry(abc.ABC):
