@@ -5,9 +5,9 @@ from visualizer import Visualizer
 from utils.observation import Observation
 from utils.functions import detectCollision, is_point_inside_rect
 from utils.opendrive2discretenet import parse_opendrive
+from utils.logger import logger
 
 import xml.dom.minidom
-from lxml import etree
 import json
 import re
 import numpy as np
@@ -513,16 +513,20 @@ class ReplayController():
             [observation.vehicle_info['ego']['x'], observation.vehicle_info['ego']['y']]
         ):
             status = 4
+            logger.debug(f"(CODE-4): 测试车驶出地图边界")
 
         # 检查是否已到达场景终止时间max_t
         if observation.test_info['t'] >= self.control_info.test_setting['max_t']:
             status = 2
+            logger.debug(f"(CODE-2): 测试超时")
 
         # 检查主车与背景车是否发生碰撞
         # 当测试时间大于0.5秒时，遍历所有车辆，绘制对应的多边形。这是因为数据问题，有些车辆在初始位置有重叠。也就是说0.5s以内不会判断是否碰撞。
         if observation.test_info['t'] > 0.5:
-            if detectCollision(observation.object_info()):
+            collideInfo = detectCollision(observation.object_info())
+            if collideInfo:
                 status = 3
+                logger.debug(f"(CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
 
         # 检查是否已经到达终点
         if is_point_inside_rect(
@@ -531,6 +535,7 @@ class ReplayController():
             [observation.vehicle_info['ego']['x'], observation.vehicle_info['ego']['y']]
         ):
             status = 1
+            logger.debug(f"(CODE-1): 测试车成功抵达目标区域")
 
         observation.test_info['end'] = status
         return observation

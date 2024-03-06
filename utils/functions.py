@@ -6,6 +6,7 @@ import platform
 import signal
 
 from utils.netStruct import outSide, crash
+from utils.logger import logger
 
 def convertAngle(angle1: float):
     # 把TESSNG转角与OnSite转角互相转换
@@ -58,33 +59,33 @@ def detectCollision(vehicleInfo: dict) -> dict:
 def testFinish(goal: list, vehicleInfo: dict, outOfTime: bool, outOfMap: bool) -> int:
     # 测试结束有两个条件，Ego行驶到对应的终点面域或者达到极限测试批次
     if outOfMap:
-        print(f"[FAILED](CODE-4): 测试车驶出道路边界")
+        logger.debug(f"(CODE-4): 测试车驶出道路边界")
         outSide["outSide"] = True
         return 4
 
     if outOfTime:
-        print(f"[FAILED](CODE-2): 测试超时")
+        logger.debug(f"(CODE-2): 测试超时")
         return 2
 
     if vehicleInfo.get('ego'):
         collideInfo = detectCollision(vehicleInfo)
         if collideInfo:
-            print(f"[FAILED](CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
-            print(f"    --> 测试车状态 x:{collideInfo['ego']['x']} y:{collideInfo['ego']['y']} "
-                  f"yaw:{collideInfo['ego']['yaw']} length:{collideInfo['ego']['length']} "
-                  f"width:{collideInfo['ego']['width']}")
-            print(f"    --> 背景车状态 x:{collideInfo['collideVehicle']['x']} y:{collideInfo['collideVehicle']['y']} "
-                  f"yaw:{collideInfo['collideVehicle']['yaw']} length:{collideInfo['collideVehicle']['length']} "
-                  f"width:{collideInfo['collideVehicle']['width']}")
+            logger.debug(f"(CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
+            # print(f"    --> 测试车状态 x:{collideInfo['ego']['x']} y:{collideInfo['ego']['y']} "
+            #       f"yaw:{collideInfo['ego']['yaw']} length:{collideInfo['ego']['length']} "
+            #       f"width:{collideInfo['ego']['width']}")
+            # print(f"    --> 背景车状态 x:{collideInfo['collideVehicle']['x']} y:{collideInfo['collideVehicle']['y']} "
+            #       f"yaw:{collideInfo['collideVehicle']['yaw']} length:{collideInfo['collideVehicle']['length']} "
+            #       f"width:{collideInfo['collideVehicle']['width']}")
             crash["crash"] = True
             return 3
 
         if is_point_inside_rect(goal, [vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]):
-            print(f"[SUCCESS](CODE-1): 测试车成功抵达目标区域")
-            print(f"    --> 测试车位置:{[vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]} 终点区域:{goal}")
+            logger.debug(f"(CODE-1): 测试车成功抵达目标区域")
+            # print(f"    --> 测试车位置:{[vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]} 终点区域:{goal}")
             return 1
     else:
-        print(f"[ERROR](CODE-0): 测试车已在仿真环境中删除")
+        logger.debug(f"(CODE-0): 测试车已在仿真环境中删除")
 
     return -1
 
@@ -166,7 +167,7 @@ def kill_process(targetPid):
     elif platform.system().lower() == "linux":
         kill_sig = signal.SIGKILL
     try:
-        print(f"[KILL] shutting down TessNG with pid-{targetPid}")
+        # print(f"[KILL] shutting down TessNG with pid-{targetPid}")
         os.kill(targetPid, kill_sig)
     except Exception as e:
-        print(f"[ERROR] killing {targetPid} failed: {e}")
+        logger.critical(f"[ERROR] killing {targetPid} failed: {e}")
