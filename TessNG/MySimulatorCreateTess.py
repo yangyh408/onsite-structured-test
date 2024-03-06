@@ -1,4 +1,5 @@
 import os
+import json
 
 from DockWidget import *
 from Tessng import *
@@ -40,13 +41,17 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
                 opendrive2tess(netiface, parms)
                 netiface.saveRoadNet()
             except Exception as e:
-                failed_tasks.append(scene_name)
+                failed_tasks.append(new_tess_path)
                 print(f"Error when creating tess in {scene_name}: {repr(e)}")
             
         print('*'*50)
         print(f"SUCCESS CREATE TESS {len(self.scenario_manager.tasks_without_tess) - len(failed_tasks)}/{len(self.scenario_manager.tasks_without_tess)}")
         if failed_tasks:
-            print(f"Failed tasks: {failed_tasks}")
+            temp_dir = os.path.join(os.path.dirname(__file__), '../temp/')
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            with open(os.path.join(temp_dir, 'create_failed.json'), 'w') as f:
+                json.dump(failed_tasks, f)
         print('*'*50)
 
         kill_process(os.getpid())

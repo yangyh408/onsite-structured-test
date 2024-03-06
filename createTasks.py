@@ -1,3 +1,5 @@
+import os
+import json
 import TessNG
 
 def main():
@@ -10,6 +12,17 @@ def main():
     # config = {'task_num': 26, 'map': 'TJST_pure', 'start_lane':0, 'link_ids': [284, 181, 304, 215, 45, 178]}
 
     TessNG.run(mode, config, None, auto_run=False)
+    
+    if mode == 'CREATE_TESS':
+        temp_file_path = './temp/create_failed.json'
+        if os.path.exists(temp_file_path):
+            with open(temp_file_path, 'r') as f:
+                failed_list = json.load(f)
+            for tess_path in failed_list:
+                if os.path.exists(tess_path):
+                    os.remove(tess_path)
+                    print(f"Remove {tess_path}")
+            os.remove(temp_file_path)
 
 if __name__ == '__main__':
     main()
