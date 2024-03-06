@@ -27,9 +27,9 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
         failed_tasks = []
 
         for scene_name in self.scenario_manager.tasks_without_tess:
+            task_dir = os.path.join(self.scenario_manager.task_dir, scene_name)
+            new_tess_path = os.path.join(task_dir, f"{scene_name}.tess")
             try:
-                task_dir = os.path.join(self.scenario_manager.task_dir, scene_name)
-                new_tess_path = os.path.join(task_dir, f"{scene_name}.tess")
                 netiface.createEmptyNetFile(new_tess_path)
                 netiface.openNetFle(new_tess_path)
                 parms = {
@@ -42,10 +42,12 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
             except Exception as e:
                 failed_tasks.append(scene_name)
                 print(f"Error when creating tess in {scene_name}: {repr(e)}")
+            
         print('*'*50)
         print(f"SUCCESS CREATE TESS {len(self.scenario_manager.tasks_without_tess) - len(failed_tasks)}/{len(self.scenario_manager.tasks_without_tess)}")
         if failed_tasks:
             print(f"Failed tasks: {failed_tasks}")
         print('*'*50)
+
         kill_process(os.getpid())
         return 
