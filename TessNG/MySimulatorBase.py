@@ -233,6 +233,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                 #     print("===================Ego not found.===================")
             else:
                 self.finishTest = True
+                self.recorder.record(self.action, self.observation)
                 self.forStopSimu.emit()
 
     def afterOneStep(self):

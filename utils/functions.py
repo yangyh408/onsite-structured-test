@@ -31,12 +31,12 @@ def is_point_inside_rect(rect, egoPos) -> bool:
 
 def _is_collision(ego_info: dict, vehicle_info: dict) -> bool:
     # img = np.zeros((512,512,3), np.uint8)
-    rect1 = ((ego_info['x'], ego_info['y']), (ego_info['width'], ego_info['length']),
-             np.rad2deg(np.pi / 2 - ego_info['yaw']))
+    rect1 = ((ego_info['x'], -ego_info['y']), (ego_info['length'], ego_info['width']),
+             np.rad2deg(-ego_info['yaw']))
     # box1 = np.int0(cv2.boxPoints(rect1))
     # cv2.drawContours(img, [box1], 0, (0,0,255),2)
-    rect2 = ((vehicle_info['x'], vehicle_info['y']), (vehicle_info['width'], vehicle_info['length']),
-             np.rad2deg(np.pi / 2 - vehicle_info['yaw']))
+    rect2 = ((vehicle_info['x'], -vehicle_info['y']), (vehicle_info['length'], vehicle_info['width']),
+             np.rad2deg(-vehicle_info['yaw']))
     # box2 = np.int0(cv2.boxPoints(rect2))
     # cv2.drawContours(img, [box2], 0, (0,0,255),2)
     # cv2.imshow('Rotated Rectangle', img)
