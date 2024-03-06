@@ -121,50 +121,57 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             iface = tessngIFace()
             netiface = iface.netInterface()
             lLocations = netiface.locateOnCrid(QPointF(m2p(position['x']), - m2p(position['y'])), 9)
-            if not lLocations:
-                self.outSideTessngNet = True
-                return
-
-            # 计算车辆当前所在车道或所在车道连接的上游车道，作为匹配时的目标车道
-            if vehicle.roadIsLink():
-                currentLinkLane = vehicle.lane()
-                # 如果在路段上，获取到正在路段上的车道编号
-                target_lane_id = currentLinkLane.id()
-            else:
-                # 如果当前车辆在连接段上，.lane() 取到的是车道连接所在的上游车道
-                currentLinkLaneConnector = vehicle.lane()
-                # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
-                target_lane_id = currentLinkLaneConnector.id()
-
-            # 选取 最优 location
-            location = lLocations[0]  # 默认取第一个
-            for demo_location in lLocations:
-                if demo_location.pLaneObject.isLane():
-                    # 如果匹配到了正常车道，不需要做车道预期判断
-                    location = demo_location
-                    break
+            
+            if lLocations:
+                # 计算车辆当前所在车道或所在车道连接的上游车道，作为匹配时的目标车道
+                if vehicle.roadIsLink():
+                    currentLinkLane = vehicle.lane()
+                    # 如果在路段上，获取到正在路段上的车道编号
+                    target_lane_id = currentLinkLane.id()
                 else:
-                    # 如果匹配到了车道连接，做车道预期判断，只取符合条件的车道
-                    lane = demo_location.pLaneObject.castToLaneConnector()
-                    if lane.fromLane().id() == target_lane_id:
+                    # 如果当前车辆在连接段上，.lane() 取到的是车道连接所在的上游车道
+                    currentLinkLaneConnector = vehicle.lane()
+                    # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
+                    target_lane_id = currentLinkLaneConnector.id()
+
+                # 选取 最优 location
+                location = lLocations[0]  # 默认取第一个
+                for demo_location in lLocations:
+                    if demo_location.pLaneObject.isLane():
+                        # 如果匹配到了正常车道，不需要做车道预期判断
                         location = demo_location
                         break
+                    else:
+                        # 如果匹配到了车道连接，做车道预期判断，只取符合条件的车道
+                        lane = demo_location.pLaneObject.castToLaneConnector()
+                        if lane.fromLane().id() == target_lane_id:
+                            location = demo_location
+                            break
 
-            # 强制移动av/mv车辆
-            vehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
-            return
-        
+                # 强制移动av/mv车辆
+                vehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
+                return
+
     def _delVehicle(self, pIVehicle) -> bool:
         # 删除在指定消失路段的车辆
         if pIVehicle.name() != self.EgoName and self.outSideTessngNet:
             return True
         else:
             return False
+    
+    def _checkOutSideMap(self):
+        iface = tessngIFace()
+        netiface = iface.netInterface()
+        if self.nextEgoInfo:
+            lLocations = netiface.locateOnCrid(QPointF(m2p(self.nextEgoInfo['x']), - m2p(self.nextEgoInfo['y'])), 9)
+            if not lLocations:
+                self.outSideTessngNet = True
         
     def afterStep(self, pIVehicle: Tessng.IVehicle) -> None:
         self._paintMyVehicle(pIVehicle)
         self._moveEgo(pIVehicle, self.nextEgoInfo)
         self._delVehicle(pIVehicle)
+        self._checkOutSideMap()
 
     def _tessngServerMsg(self, tessngSimuiface, currentTestTime):
         """
