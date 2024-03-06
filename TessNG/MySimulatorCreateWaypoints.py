@@ -45,9 +45,6 @@ class MySimulatorCreateWaypoints(QObject, PyCustomerSimulator):
                 waypoints["waypoints"] = scenario_info.get('waypoints', {})
         else:
             scenario_info = {"scenarioName": task_name}
-        # TODO: 此时执行启动仿真操作会导致程序异常终止
-        # simuiface.startSimu()
-
 
         self.config = config
         self.linkIds = config.get('link_ids', [])
@@ -132,5 +129,7 @@ class MySimulatorCreateWaypoints(QObject, PyCustomerSimulator):
             "targetPos": getGoalArea(list(wp.values())[-1]),
             "waypoints": wp,
         }
+        with open(self.task_path, "w") as f:
+            json.dump(task_info, f)
         kill_process(os.getpid())
 

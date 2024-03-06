@@ -8,13 +8,14 @@ from TessNG.MySimulatorCreateWaypoints import MySimulatorCreateWaypoints
 
 # 用户插件，继承自TessPlugin
 class MyPlugin(TessPlugin):
-    def __init__(self, mode: str, config: dict, planner: object):
+    def __init__(self, mode: str, config: dict, planner: object, scene_info: dict=None):
         super(MyPlugin, self).__init__()
         self.mNetInf = None
         self.mSimuInf = None
         self.mode = mode
         self.config = config
         self.planner = planner
+        self.scene_info = scene_info
 
     def initGui(self):
         # 在TESS NG主界面上增加 QDockWidget对象
@@ -54,9 +55,9 @@ class MyPlugin(TessPlugin):
         self.initGui()
         self.mNetInf = MyNet()
         if self.mode == 'SERIAL':
-            self.mSimuInf = MySimulatorSerial(self.config, self.planner)
+            self.mSimuInf = MySimulatorSerial(self.config, self.planner, self.scene_info)
         elif self.mode == 'FRAGMENT':
-            self.mSimuInf = MySimulatorFragment(self.config, self.planner)
+            self.mSimuInf = MySimulatorFragment(self.config, self.planner, self.scene_info)
         elif self.mode == 'CREATE_TESS':
             self.mSimuInf = MySimulatorCreateTess(self.config)
         elif self.mode == 'CREATE_WAYPOINTS':

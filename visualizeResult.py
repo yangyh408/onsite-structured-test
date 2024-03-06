@@ -26,6 +26,8 @@ class Player(FuncAnimation):
         self.fig = fig
         self.func = func
         self.setup(playerax)
+        if not save_count:
+            save_count = self.max + 1
         FuncAnimation.__init__(self,self.fig, self.update, frames=self.play(), 
                                            init_func=init_func, fargs=fargs,
                                            save_count=save_count, **kwargs )    
@@ -196,7 +198,8 @@ class VisualizeResult():
     def run(self, save_path: str=None):
         ani = Player(self.fig, self.update, playerax=self.ax_player, init_func=self.init, interval=100, repeat=False, maxi=len(self.df)-1)
         if save_path:
-            ani.save(save_path, writer='imagemagick', fps=10)
+            ani.save(save_path, writer='pillow', fps=10)
+            # ani.save(save_path, writer='imagemagick', fps=int(1/self.scene_info['dt']))
         else:
             # self.init()
             # self.update(2)
@@ -435,7 +438,7 @@ class VisualizeResult():
         return [new_range_x, new_range_y]
 
 if __name__ == '__main__':
-    result_path = r'H:\onsite结构化测试赛道\最新版本\onsite_structured_test\outputs\SERIAL_0_Cyz_TJST_2_result.csv'
-    # result_path = r"H:\onsite结构化测试赛道\最新版本\onsite_structured_test\outputs\REPLAY_1_intersection_12_61_1_result.csv"
+    result_path = r"H:\onsite结构化测试赛道\最新版本\onsite_structured_test\outputs\SERIAL_1_Cyz_TJST_2_result.csv"
+    save_path = None
     vr = VisualizeResult(result_path)
-    vr.run()
+    vr.run(save_path=save_path)

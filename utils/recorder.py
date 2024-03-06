@@ -66,11 +66,6 @@ class DataRecord:
 # 记录模块
 class Recorder:
     def __init__(self):
-        self.end_status = None
-        self.data = None
-        self.init()
-
-    def init(self):
         self.end_status = -1
         self.data = DataRecord()
 

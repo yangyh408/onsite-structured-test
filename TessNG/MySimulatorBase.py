@@ -1,6 +1,5 @@
 import os
 import math
-import time
 
 from DockWidget import *
 from Tessng import *
@@ -33,13 +32,12 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 背景车探测范围
         self.radius = 50
 
-        # 实例化测试场景管理器
-        self.scenario_manager = None
+        # 测试场景信息
+        self.scenario_info = None
         # 实例化规控器
         self.planner = None
 
         # 仿真流程控制参数
-        self.startTest = True
         self.finishTest = False
 
         self.recorder = Recorder()
@@ -59,51 +57,19 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.action = [float('nan'), float('nan')]
         # 下一帧主车信息
         self.nextEgoInfo = {}
-        # 启动监测线程
-        # _thread.start_new_thread(self.updateSimuStatus, ())
-        iface = tessngIFace()
-        simuiface = iface.simuInterface()
-        simuiface.startSimu()
-
-    def updateSimuStatus(self):
-        iface = tessngIFace()
-        simuiface = iface.simuInterface()
-        while True:
-            # TODO: 针对Linux系统下无法自动运行添加的判断
-            # if not simuiface.isRunning():
-            #     simuiface.startSimu()
-            #     time.sleep(2)
-            if self.startTest:
-                self.startTest = False
-                time.sleep(1)
-                self.finishTest = True
-            if self.finishTest and (simuiface.isRunning() and not simuiface.isPausing()):
-                self.startTest = False
-                self.forStopSimu.emit()
-                while True:
-                    # Check if tessng has successfully stopped
-                    if not simuiface.isRunning():
-                        time.sleep(0.5)
-                        break
-            else:
-                time.sleep(1)
+        # TODO: 手动开启仿真，但存在稳定性问题，暂时停止使用
+        # iface = tessngIFace()
+        # simuiface = iface.simuInterface()
+        # simuiface.startSimu()
 
     def ref_beforeStart(self, ref_keepOn):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         simuiface.setSimuAccuracy(1 / self.dt)
-        startEndPos["startPos"] = self.scenario_manager.cur_scene.get('startPos', [])
-        startEndPos["endPos"] = self.scenario_manager.cur_scene.get('targetPos', [])
-        waypoints["waypoints"] = self.scenario_manager.cur_scene.get('waypoints', [])
-
+        startEndPos["startPos"] = self.scenario_info.get('startPos', [])
+        startEndPos["endPos"] = self.scenario_info.get('targetPos', [])
+        waypoints["waypoints"] = self.scenario_info.get('waypoints', [])
         return True
-
-    @staticmethod
-    def _isRoadLink(pIVehicle) -> bool:
-        if pIVehicle.roadIsLink():
-            return True
-        else:
-            return False
 
     def _paintMyVehicle(self, pIVehicle: Tessng.IVehicle):
         if pIVehicle.name() == self.EgoName:
@@ -170,7 +136,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def afterStep(self, pIVehicle: Tessng.IVehicle) -> None:
         self._paintMyVehicle(pIVehicle)
         self._moveEgo(pIVehicle, self.nextEgoInfo)
-        self._delVehicle(pIVehicle)
+        # self._delVehicle(pIVehicle)
         self._checkOutSideMap()
 
     def _tessngServerMsg(self, tessngSimuiface, currentTestTime):
@@ -183,7 +149,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         if self.nextEgoInfo:
             egoPos = [self.nextEgoInfo['x'], self.nextEgoInfo['y']]
         else:
-            egoPos = self.scenario_manager.cur_scene['startPos']
+            egoPos = self.scenario_info['startPos']
 
         vehicleInfo = {}
         vehicleTotal = Observation()
@@ -203,8 +169,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         vehicleTotal.vehicle_info = vehicleInfo
         vehicleTotal.light_info = {}
 
-        if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 5000:
-            end = testFinish(goal=self.scenario_manager.cur_scene['targetPos'],
+        # TODO: 目前设定在预热时间3秒后开始检测终止条件
+        if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 3000:
+            end = testFinish(goal=self.scenario_info['targetPos'],
                               vehicleInfo=vehicleInfo,
                               outOfTime=(currentTestTime/1000)>=self.maxTestTime,
                               outOfMap=self.outSideTessngNet
@@ -247,12 +214,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         pass
 
     def mainStep(self, simuiface, netiface):
-        if self.startTest:
-            self.startTest = False
-            self.forStopSimu.emit()
         simuTime = simuiface.simuTimeIntervalWithAcceMutiples()
         # batchNum = simuiface.batchNumber()
-        if simuTime >= self.preheatingTime * 1000:
+        if simuTime >= self.preheatingTime * 1000 and not self.finishTest:
             if not self.createCarLock:
                 self._addCar(simuiface, netiface)
                 self.createCarLock = 1
@@ -268,43 +232,16 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                 # else:
                 #     print("===================Ego not found.===================")
             else:
-                if not self.finishTest:
-                    self.finishTest = True
-                    self.forStopSimu.emit()
+                self.finishTest = True
+                self.forStopSimu.emit()
 
     def afterOneStep(self):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         netiface = iface.netInterface()
         self.mainStep(simuiface, netiface)
-
-    def _clearLastTest(self):
-        self.action = [float('nan'), float('nan')]
-        self.nextEgoInfo = dict()
-        self.vehicleMap = dict()
-        self.createCarLock = 0
-        self.outSideTessngNet = False
-
-    def _dealRecord(self):
-        if self.scenario_manager.cur_scene_num >= 0:
-            self.recorder.output(self.scenario_manager.cur_scene['output_path'])
-                                           
+                      
     def afterStop(self):
-        self.finishTest = False
-        self._clearLastTest()
-        self._dealRecord()
-        # 开始下一个场景测试
-        if self.scenario_manager.next():
-            # 重置记录模块
-            self.recorder.init()
-            self.planner.init(self.scenario_manager.current_scene_info())
-            # self.createCarList = list(self.scenario_manager.cur_scene['vehicle_init_status'].keys())
-            iface = tessngIFace()
-            simuiface = iface.simuInterface()
-            netface = iface.netInterface()
-            netface.openNetFle(self.scenario_manager.cur_scene['tess_file_path'])
-            simuiface.startSimu()
-        else:
-            print(self.scenario_manager.record)
-            kill_process(os.getpid())
+        self.recorder.output(self.scenario_info['output_path'])
+        kill_process(os.getpid())
 

@@ -11,14 +11,17 @@ from MyPlugin import MyPlugin
 from TESS_API_EXAMPLE import *
 
 
-def startTessNG(mode: str, mode_config: dict, planner: object, auto_run: bool):
+def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: dict, auto_run: bool) -> None:
     app = QApplication()
 
     config = {'__workspace': BASE_DIR,
               '__simuafterload': auto_run,
               '__custsimubysteps': False
               }
-    plugin = MyPlugin(mode, mode_config, planner)
+    tess_file = scene_info.get('tess_file_path')
+    if tess_file:
+        config['__netfilepath'] = rf"{tess_file}"
+    plugin = MyPlugin(mode, mode_config, planner, scene_info)
     factory = TessngFactory()
     tessng = factory.build(plugin, config)
 
@@ -27,8 +30,8 @@ def startTessNG(mode: str, mode_config: dict, planner: object, auto_run: bool):
     else:
         sys.exit(app.exec_())
 
-def run(mode: str, mode_config: dict, planner: object, auto_run: bool=True) -> None:
-    tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, auto_run))
+def run(mode: str, mode_config: dict, planner: object=None, scene_info: dict={}, auto_run: bool=True) -> None:
+    tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, scene_info, auto_run))
     tessng_p.start()
     tessng_p.join()
 
