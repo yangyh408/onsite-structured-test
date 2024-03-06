@@ -23,7 +23,7 @@ class MySimulatorFragment(MySimulatorBase):
         # 加载场景信息
         self.scenario_info = scene_info
         # 仿真预热时间
-        self.preheatingTime = 5
+        self.preheatingTime = 0
         # 背景车探测范围
         self.radius = 50
 
