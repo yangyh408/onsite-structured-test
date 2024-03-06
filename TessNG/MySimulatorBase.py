@@ -1,8 +1,6 @@
 import os
 import math
 import time
-import platform
-import signal
 
 from DockWidget import *
 from Tessng import *
@@ -10,7 +8,7 @@ import Tessng
 
 from utils.recorder import Recorder
 from utils.observation import Observation
-from utils.functions import convertAngle, calcDistance, testFinish, check_action, updateEgoPos
+from utils.functions import convertAngle, calcDistance, testFinish, check_action, updateEgoPos, kill_process
 from utils.netStruct import paintPos, startEndPos, waypoints
 
 # 仿真测试模块
@@ -283,19 +281,6 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def _dealRecord(self):
         if self.scenario_manager.cur_scene_num >= 0:
             self.recorder.output(self.scenario_manager.cur_scene['output_path'])
-
-    @staticmethod
-    def kill_process(targetPid):
-        if platform.system().lower() == "windows":
-            kill_sig = signal.SIGINT
-        elif platform.system().lower() == "linux":
-            kill_sig = signal.SIGKILL
-        try:
-            print(f"[KILL] shutting down TessNG with pid-{targetPid}")
-            os.kill(targetPid, kill_sig)
-        except Exception as e:
-            print(f"[ERROR] killing {targetPid} failed: {e}")
-            
                                            
     def afterStop(self):
         self.finishTest = False
@@ -314,5 +299,5 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             simuiface.startSimu()
         else:
             print(self.scenario_manager.record)
-            self.kill_process(os.getpid())
+            kill_process(os.getpid())
 

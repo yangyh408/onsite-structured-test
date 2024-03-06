@@ -1,12 +1,11 @@
 import os
-import json
 
 from DockWidget import *
 from Tessng import *
-import Tessng
 
 from createTess.opendrive2tess import opendrive2tess
 from utils.scenarioManager import scenarioManager
+from utils.functions import kill_process
 
 # 仿真测试模块
 class MySimulatorCreateTess(QObject, PyCustomerSimulator):
@@ -48,7 +47,5 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
         if failed_tasks:
             print(f"Failed tasks: {failed_tasks}")
         print('*'*50)
-        pidDict = {"done": 1}
-        with open("./cache.json", "w") as f:
-            json.dump(pidDict, f)
+        kill_process(os.getpid())
         return 

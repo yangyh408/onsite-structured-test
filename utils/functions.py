@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 from numpy import array, linalg
+import os
+import platform
+import signal
 
 from utils.netStruct import outSide, crash
 
@@ -156,3 +159,14 @@ def check_action(dt, prev_action, new_action):
             checked_rot = prev_action[1] + rot_rate * dt
 
     return [np.clip(checked_acc, -ACC_LIMIT, ACC_LIMIT), np.clip(checked_rot, -ROT_LIMIT, ROT_LIMIT)]
+
+def kill_process(targetPid):
+    if platform.system().lower() == "windows":
+        kill_sig = signal.SIGINT
+    elif platform.system().lower() == "linux":
+        kill_sig = signal.SIGKILL
+    try:
+        print(f"[KILL] shutting down TessNG with pid-{targetPid}")
+        os.kill(targetPid, kill_sig)
+    except Exception as e:
+        print(f"[ERROR] killing {targetPid} failed: {e}")

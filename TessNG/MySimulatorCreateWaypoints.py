@@ -6,6 +6,7 @@ from Tessng import *
 import Tessng
 
 from utils.netStruct import startEndPos, waypoints
+from utils.functions import kill_process
 
 def getGoalArea(goal_point):
     center_x, center_y = goal_point
@@ -131,10 +132,5 @@ class MySimulatorCreateWaypoints(QObject, PyCustomerSimulator):
             "targetPos": getGoalArea(list(wp.values())[-1]),
             "waypoints": wp,
         }
-        with open(self.task_path, "w") as f:
-            json.dump(task_info, f)
-        pidDict = {"done": 1}
-        with open("./cache.json", "w") as f:
-            json.dump(pidDict, f)
-        return
+        kill_process(os.getpid())
 
