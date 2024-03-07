@@ -182,7 +182,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         vehicleTotal.test_info = {
             "t": currentTestTime / 1000, 
             "dt": self.dt,
-            "end": end
+            "end": end,
+            "acc": self.action[0],
+            "rot": self.action[1],
         }
         return vehicleTotal
     

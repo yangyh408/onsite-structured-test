@@ -182,51 +182,8 @@ class Visualizer():
         self.position_box = self._plot_position_box(self.ax_map_obj, ax_detail_range)
         plt.tight_layout()
 
-    def live_init(self, scene_info=None, road_info=None):
-        """进行实时可视化的静态信息绘制"""
-        self.scene_info = scene_info
-        self.road_info = road_info
-        # 创建画布
-        self.fig_width = 9
-        self.fig_height = 6
-        self.fig = plt.figure(figsize=(self.fig_width, self.fig_height))
-        # 划分网格
-        gs = GridSpec(2, 2, width_ratios=[2, 5], height_ratios=[2, 1])
-        self.ax_table = plt.subplot(gs[0, 0])       # 左上角表格区域
-        self.ax_map_bg = plt.subplot(gs[1, 0])      # 左下角地图区域
-        self.ax_detail_bg = plt.subplot(gs[:, 1])   # 右边测试详情区域
-        # 创建动态元素图层
-        self.ax_detail_obj = self.ax_detail_bg.twinx()
-        self.ax_map_obj = self.ax_map_bg.twinx()
-        # 网格区域初始设置
-        self.ax_map_bg.set_xticks([])
-        self.ax_map_bg.set_yticks([])
-        self.ax_detail_obj.set_yticks([])
-        self.ax_map_obj.set_yticks([])
-        self.ax_table.axis('off')
-        self.plot_static()
-        plt.ion()
-
-    def live_update(self, observation):
-        test_info = {
-            't': observation.test_info['t'],
-            'end': self._format_number(observation.test_info['end'], 0),
-            'acc': self._format_number(0, 2),
-            'rot': self._format_number(0, 2),
-            'ego_x': self._format_number(observation.vehicle_info['ego']['x'], 2),
-            'ego_y': self._format_number(observation.vehicle_info['ego']['y'], 2),
-            'ego_v': self._format_number(observation.vehicle_info['ego']['v'], 2),
-            'ego_yaw': self._format_number(observation.vehicle_info['ego']['yaw'], 2),
-        }
-        objects_info = observation.object_info()
-        self.update_dynamic(test_info, objects_info)
-        if observation.test_info['end'] != -1:
-            plt.ioff()
-            plt.close()
-        plt.pause(1e-7)
-        
-
     def replay_update(self, frame: int):
+        """可视化回放的界面更新"""
         test_info, objects_info = self._get_frame_info_from_result(frame)
         self.update_dynamic(test_info, objects_info)
 
@@ -252,6 +209,50 @@ class Visualizer():
         if new_range:
             self.position_box.set_xy([new_range[0][0], new_range[1][0]])
 
+    def live_init(self, scene_info=None, road_info=None):
+        """REPLAY模式下进行可视化的静态信息绘制"""
+        self.scene_info = scene_info
+        self.road_info = road_info
+        # 创建画布
+        self.fig_width = 9
+        self.fig_height = 6
+        self.fig = plt.figure(figsize=(self.fig_width, self.fig_height))
+        # 划分网格
+        gs = GridSpec(2, 2, width_ratios=[2, 5], height_ratios=[2, 1])
+        self.ax_table = plt.subplot(gs[0, 0])       # 左上角表格区域
+        self.ax_map_bg = plt.subplot(gs[1, 0])      # 左下角地图区域
+        self.ax_detail_bg = plt.subplot(gs[:, 1])   # 右边测试详情区域
+        # 创建动态元素图层
+        self.ax_detail_obj = self.ax_detail_bg.twinx()
+        self.ax_map_obj = self.ax_map_bg.twinx()
+        # 网格区域初始设置
+        self.ax_map_bg.set_xticks([])
+        self.ax_map_bg.set_yticks([])
+        self.ax_detail_obj.set_yticks([])
+        self.ax_map_obj.set_yticks([])
+        self.ax_table.axis('off')
+        self.plot_static()
+        plt.ion()
+
+    def live_update(self, observation):
+        """REPLAY模式下进行可视化界面更新"""
+        test_info = {
+            't': observation.test_info['t'],
+            'end': self._format_number(observation.test_info['end'], 0),
+            'acc': self._format_number(observation.test_info['acc'], 2),
+            'rot': self._format_number(observation.test_info['rot'], 2),
+            'ego_x': self._format_number(observation.vehicle_info['ego']['x'], 2),
+            'ego_y': self._format_number(observation.vehicle_info['ego']['y'], 2),
+            'ego_v': self._format_number(observation.vehicle_info['ego']['v'], 2),
+            'ego_yaw': self._format_number(observation.vehicle_info['ego']['yaw'], 2),
+        }
+        objects_info = observation.object_info()
+        self.update_dynamic(test_info, objects_info)
+        if observation.test_info['end'] != -1:
+            plt.ioff()
+            plt.close()
+        plt.pause(1e-7)
+        
     def show_task(self, mode: str, task: str):
         """展示指定任务的场景信息"""
         self.fig = plt.figure(figsize=(self.fig_width, self.fig_height))

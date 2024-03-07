@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils.scenarioManager import format_scenario_info
 from utils.recorder import Recorder
 from utils.functions import check_action
-from controller import ReplayController
+from .controller import ReplayController
 
 def run(mode_config: dict, planner: object, scene_info: dict) -> None:
     controller = ReplayController(mode_config['visualize'])

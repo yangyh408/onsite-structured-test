@@ -18,6 +18,8 @@ class Observation():
             "t": 0.00, 
             "dt": 0.00,
             "end": -1,
+            'acc': float('nan'),
+            'rot': float('nan'),
         }
         
     def format(self):
