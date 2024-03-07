@@ -52,7 +52,6 @@ class Player(FuncAnimation):
         self.event_source.stop()
 
     def forward(self, event=None):
-        print('here')
         self.forwards = True
         self.start()
     def backward(self, event=None):
