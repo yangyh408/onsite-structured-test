@@ -2,6 +2,7 @@ from utils.opendrive2discretenet import parse_opendrive
 from utils.scenarioManager import scenarioManager
 from OnSiteReplay.controller import ReplayController
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -121,7 +122,7 @@ class Visualizer():
         # 解析结果文件
         self.result_df = pd.read_csv(result_path)
         # 加载场景信息
-        result_file = result_path.split('\\')[-1]
+        result_file = os.path.basename(result_path)
         mode = result_file.split('_')[0]
         task = '_'.join(result_file.split('_')[2:-1])
         self.scene_info = self._load_result_scene(mode, task)
