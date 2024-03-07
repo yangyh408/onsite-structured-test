@@ -125,6 +125,7 @@ class Visualizer():
         mode = result_file.split('_')[0]
         task = '_'.join(result_file.split('_')[2:-1])
         self.scene_info = self._load_result_scene(mode, task)
+        self.scene_info['dt'] = f"{self.result_df.iloc[1, 0] - self.result_df.iloc[0, 0]:.2f}"
         # 解析opendrive路网文件
         self.road_info = parse_opendrive(self.scene_info['xodr_file_path'])
         # 进行可视化回放

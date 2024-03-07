@@ -54,7 +54,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 场景解析锁
         self.scenarioLock = 0
         # 主车控制量
-        self.action = [float('nan'), float('nan')]
+        self.action = [0, 0]
         # 下一帧主车信息
         self.nextEgoInfo = {}
         # TODO: 手动开启仿真，但存在稳定性问题，暂时停止使用
