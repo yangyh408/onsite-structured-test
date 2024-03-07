@@ -278,6 +278,14 @@ class Visualizer():
                                   [np.min(waypoints[:, 1])-10, np.max(waypoints[:, 1])+10])
         plt.show()
 
+    def show_map(self, xodr_path):
+        """展示指定opendrive路网文件的地图"""
+        self.fig = plt.figure(figsize=(self.fig_width, self.fig_height))
+        self.ax = self.fig.add_subplot(111)
+        self.road_info = parse_opendrive(xodr_path)
+        self._plot_roads(self.ax, self.road_info, draw_arrow=True)
+        plt.show()
+
     def _plot_roads(self, ax, road_info, draw_arrow: bool=False) -> None:
         """根据parse_opendrive模块解析出的opendrive路网信息绘制道路"""
         xlim1 = float("Inf")
