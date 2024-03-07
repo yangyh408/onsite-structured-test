@@ -1,7 +1,6 @@
 import math
 import xml.etree.ElementTree as ET
 
-from visualizer import Visualizer
 from utils.observation import Observation
 from utils.functions import detectCollision, is_point_inside_rect
 from utils.opendrive2discretenet import parse_opendrive
@@ -381,18 +380,24 @@ class ReplayParser():
 class ReplayController():
     def __init__(self, visualize=False):
         self.parser = ReplayParser()
-        self.visualizer = Visualizer(visualize)
         self.control_info = None
+        self.visualize = visualize
+        if self.visualize:
+            from utils.visualizer import Visualizer
+            self.visualizer = Visualizer()
+
+
 
     def init(self, scenario_info: dict) -> Observation:
         self.control_info = self.parser.parse(scenario_info)
-        self.visualizer.init(self.control_info)
         scenario_info['startPos'] = [self.control_info.ego_info['x'], self.control_info.ego_info['y']]
         scenario_info['targetPos'] = [
             [self.control_info.test_setting['goal']['x'][0], self.control_info.test_setting['goal']['y'][0]],
             [self.control_info.test_setting['goal']['x'][1], self.control_info.test_setting['goal']['y'][1]],
         ]
         scenario_info['dt'] = self.control_info.test_setting['dt']
+        if self.visualize:
+            self.visualizer.live_init(scenario_info, self.control_info.road_info)
 
         observation = Observation()
         observation.vehicle_info['ego'] = self.control_info.ego_info
@@ -404,7 +409,8 @@ class ReplayController():
         if self.control_info.light_info:
             observation = self._update_light_info_to_t(observation)
         observation = self._update_end_status(observation)
-        self.visualizer.update(observation)
+        if self.visualize:
+            self.visualizer.live_update(observation)
         return observation
     
     def update_ego(self, action: list, observation: Observation) -> Observation:
