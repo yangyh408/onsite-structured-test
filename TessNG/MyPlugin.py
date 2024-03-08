@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-from TESS_API_EXAMPLE import *
-from MyNet import MyNet
-from TessNG.MySimulatorSerial import MySimulatorSerial
-from TessNG.MySimulatorFragment import MySimulatorFragment
-from TessNG.MySimulatorCreateTess import MySimulatorCreateTess
-from TessNG.MySimulatorCreateWaypoints import MySimulatorCreateWaypoints
+from .TESS_API_EXAMPLE import *
+from .MyNet import MyNet
+from .MySimulator import select_simulator
 
 # 用户插件，继承自TessPlugin
 class MyPlugin(TessPlugin):
@@ -54,14 +51,7 @@ class MyPlugin(TessPlugin):
     def init(self):
         self.initGui()
         self.mNetInf = MyNet()
-        if self.mode == 'SERIAL':
-            self.mSimuInf = MySimulatorSerial(self.config, self.planner, self.scene_info)
-        elif self.mode == 'FRAGMENT':
-            self.mSimuInf = MySimulatorFragment(self.config, self.planner, self.scene_info)
-        elif self.mode == 'CREATE_TESS':
-            self.mSimuInf = MySimulatorCreateTess(self.config)
-        elif self.mode == 'CREATE_WAYPOINTS':
-            self.mSimuInf = MySimulatorCreateWaypoints(self.config)
+        self.mSimuInf = select_simulator(self.mode, self.config, self.planner, self.scene_info)
         self.mSimuInf.signalRunInfo.connect(self.examleWindow.showRunInfo)
         iface = tngIFace()
         win = iface.guiInterface().mainWindow()

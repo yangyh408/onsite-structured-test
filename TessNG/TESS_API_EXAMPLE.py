@@ -4,8 +4,7 @@ import os
 from pathlib import Path
 
 from DockWidget import *
-from Tessng import *
-import Tessng
+from .DLLs.Tessng import *
 
 from utils.netStruct import waypoints, startEndPos
 
@@ -74,7 +73,7 @@ class TESS_API_EXAMPLE(QMainWindow):
         QMessageBox.information(None, "待开发", "路径诱导模块待开发中...")
 
     def showOnSite(self):
-        iface = Tessng.tngIFace()
+        iface = tngIFace()
         netiface = iface.netInterface()
         scene = netiface.graphicsScene()
         pixmap = QPixmap()
@@ -84,7 +83,7 @@ class TESS_API_EXAMPLE(QMainWindow):
         item.setPos(QPoint(200, 200))
 
     def showWayPoints(self):
-        iface = Tessng.tngIFace()
+        iface = tngIFace()
         netiface = iface.netInterface()
         scene = netiface.graphicsScene()
         if waypoints["waypoints"]:
@@ -92,7 +91,7 @@ class TESS_API_EXAMPLE(QMainWindow):
             for point in waypoint:
                 qPoint = QPoint(p2m(point[0]), -p2m(point[1]))
                 outline_color = QColor(0, 255, 255)
-                circle = QGraphicsEllipseItem(p2m(qPoint.x()), p2m(qPoint.y()), m2p(1), m2p(1))  # (x, y, width, height)
+                circle = QGraphicsEllipseItem(p2m(qPoint.x())-1, p2m(qPoint.y())-1, m2p(1), m2p(1))  # (x, y, width, height)
                 circle.setPen(outline_color)
                 circle.setBrush(outline_color)
                 circle.setZValue(200)

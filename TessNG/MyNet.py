@@ -5,9 +5,9 @@ from PySide2.QtWidgets import QGraphicsTextItem, QGraphicsRectItem, QGraphicsEll
 
 from utils.netStruct import *
 
-from Tessng import PyCustomerNet
-from Tessng import tessngIFace, p2m
-from Tessng import NetItemType, GraphicsItemPropName
+from .DLLs.Tessng import PyCustomerNet
+from .DLLs.Tessng import tessngIFace, p2m
+from .DLLs.Tessng import NetItemType, GraphicsItemPropName
 
 import numpy as np
 

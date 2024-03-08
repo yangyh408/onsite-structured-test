@@ -6,18 +6,14 @@
 /build
 /testBin
 /dist
-/outputs
 
-/TessNG/Log
-/TessNG/SimuResult
-/TessNG/Backup
+*__pycache__
+
+# 输出文件
+/outputs
+# 临时文件
+/Temp
+# Tess运行相关文件
+/TessNG/WorkSpace
 
 *cache.json
-
-#*.dll
-*Cert
-*Temp
-*__pycache__
-*.zip
-*.pyc
-*.spec

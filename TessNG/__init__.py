@@ -7,14 +7,14 @@ import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
-from MyPlugin import MyPlugin
-from TESS_API_EXAMPLE import *
+from .MyPlugin import MyPlugin
+from .TESS_API_EXAMPLE import *
 
 
 def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: dict, auto_run: bool) -> None:
     app = QApplication()
 
-    config = {'__workspace': BASE_DIR,
+    config = {'__workspace': os.path.join(BASE_DIR, 'WorkSpace'),
               '__simuafterload': auto_run,
               '__custsimubysteps': False
               }
