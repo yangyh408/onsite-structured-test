@@ -10,8 +10,11 @@ from .TESS_API_EXAMPLE import *
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 
 def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: ScenarioInfo, auto_run: bool) -> None:
+    workspace_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'WorkSpace')
+    if not os.path.exists(workspace_dir):
+        os.makedirs(workspace_dir)
     app = QApplication()
-    config = {'__workspace': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'WorkSpace'),
+    config = {'__workspace': workspace_dir,
               '__simuafterload': auto_run,
               '__custsimubysteps': False
               }
