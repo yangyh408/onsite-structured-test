@@ -47,7 +47,7 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
         print('*'*50)
         print(f"SUCCESS CREATE TESS {len(self.scenario_manager.tasks_without_tess) - len(failed_tasks)}/{len(self.scenario_manager.tasks_without_tess)}")
         if failed_tasks:
-            temp_dir = os.path.join(os.path.dirname(__file__), '../temp/')
+            temp_dir = os.path.join(os.path.dirname(__file__), '../../temp/')
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
             with open(os.path.join(temp_dir, 'create_failed.json'), 'w') as f:
