@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from DockWidget import *
+from .DockWidget import *
 from .DLLs.Tessng import *
 
 from utils.netStruct import waypoints, startEndPos
@@ -35,11 +35,6 @@ class TESS_API_EXAMPLE(QMainWindow):
         selectedFilter = "TESSNG Files (*.tess)"
         options = QFileDialog.Options(0)
         netFilePath, filtr = QFileDialog.getOpenFileName(self, "打开文件", dbDir, custSuffix, selectedFilter, options)
-        if netFilePath:
-            netface = iface.netInterface()
-            from TessNG.openNetFile.openNetFile import openNetFile
-            openNetFile(netface, netFilePath)
-            # netface.openNetFle(netFilePath)
 
     def startSimu(self):
         iface = tngIFace()

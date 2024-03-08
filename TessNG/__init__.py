@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 # 添加本开发包绝对路径到搜索路径中
-from multiprocessing import Process
-
 import os
 import sys
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
+from multiprocessing import Process
 
 from .MyPlugin import MyPlugin
 from .TESS_API_EXAMPLE import *
 
-
 def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: dict, auto_run: bool) -> None:
     app = QApplication()
-
-    config = {'__workspace': os.path.join(BASE_DIR, 'WorkSpace'),
+    config = {'__workspace': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'WorkSpace'),
               '__simuafterload': auto_run,
               '__custsimubysteps': False
               }
