@@ -1,7 +1,7 @@
 from .MySimulatorBase import MySimulatorBase
 from ..DLLs.Tessng import *
 
-from utils.scenarioManager import format_scenario_info
+from utils.ScenarioManager import format_scenario_info
 
 class MySimulatorSerial(MySimulatorBase):
     def __init__(self, config: dict, planner: object, scene_info: dict):

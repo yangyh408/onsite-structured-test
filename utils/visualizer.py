@@ -1,5 +1,5 @@
 from utils.opendrive2discretenet import parse_opendrive
-from utils.scenarioManager import scenarioManager
+from utils.ScenarioManager import select_scenario_manager
 from OnSiteReplay.controller import ReplayController
 
 import os
@@ -463,7 +463,7 @@ class Visualizer():
 
     def _load_result_scene(self, mode: str, task: str) -> dict:
         """加载输出文件对应的测试场景"""
-        sm = scenarioManager(mode, {'tasks': [task]})
+        sm = select_scenario_manager(mode, {'tasks': [task]})
         if sm.next():
             if mode == 'REPLAY':
                 controller = ReplayController(visualize=False)

@@ -1,7 +1,7 @@
 from .MySimulatorBase import MySimulatorBase
 from ..DLLs.Tessng import *
 
-from utils.scenarioManager import format_scenario_info
+from utils.ScenarioManager import format_scenario_info
 from utils.functions import getTessNGCarLength
 
 # 片段式仿真测试模块

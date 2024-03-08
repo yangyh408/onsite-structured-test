@@ -5,7 +5,7 @@ from ..DockWidget import *
 from ..DLLs.Tessng import *
 from ..createTess.opendrive2tess import opendrive2tess
 
-from utils.scenarioManager import scenarioManager
+from utils.ScenarioManager import select_scenario_manager
 from utils.functions import kill_process
 
 # 仿真测试模块
@@ -23,7 +23,7 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
         simuiface = iface.simuInterface()
         netiface = iface.netInterface()
 
-        self.scenario_manager = scenarioManager(mode='FRAGMENT', config=config)
+        self.scenario_manager = select_scenario_manager(task_dir=os.path.join(os.path.dirname(__file__), '../../scenario/fragment'), mode='FRAGMENT', config=config)
 
         failed_tasks = []
 
