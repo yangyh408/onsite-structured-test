@@ -23,7 +23,7 @@ class MySimulatorCreateWaypoints(QObject, PyCustomerSimulator):
         QObject.__init__(self)
         PyCustomerSimulator.__init__(self)
 
-        map_dir = os.path.join(os.path.dirname(__file__), f"../scenario/serial/maps/{config['map']}")
+        map_dir = os.path.join(os.path.dirname(__file__), f"../../scenario/serial/maps/{config['map']}")
         for f in os.listdir(map_dir):
             if not f.startswith('.') and f.endswith('.tess'):
                 tess_file_path = os.path.join(map_dir, f)
@@ -34,16 +34,13 @@ class MySimulatorCreateWaypoints(QObject, PyCustomerSimulator):
         netface.openNetFle(tess_file_path)
 
         task_name = f"serial_task_{config['task_num']}"
-        self.task_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f"../scenario/serial/tasks/{task_name}.json"))
+        self.task_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f"../../scenario/serial/tasks/{task_name}.json"))
         if os.path.exists(self.task_path):
             with open(self.task_path, "r") as f:
                 scenario_info = json.load(f)
-                scenario_info["scenarioName"] = task_name
                 startEndPos["startPos"] = scenario_info.get('startPos', [])
                 startEndPos["endPos"] = scenario_info.get('targetPos', [])
                 waypoints["waypoints"] = scenario_info.get('waypoints', {})
-        else:
-            scenario_info = {"scenarioName": task_name}
 
         self.config = config
         self.linkIds = config.get('link_ids', [])

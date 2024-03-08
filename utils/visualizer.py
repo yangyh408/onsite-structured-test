@@ -1,6 +1,6 @@
 from utils.opendrive2discretenet import parse_opendrive
 from utils.ScenarioManager import select_scenario_manager
-from OnSiteReplay.controller import ReplayController
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 
 import os
 import numpy as np
@@ -125,15 +125,15 @@ class Visualizer():
         mode = result_file.split('_')[0]
         task = '_'.join(result_file.split('_')[2:-1])
         self.scene_info = self._load_result_scene(mode, task)
-        self.scene_info['dt'] = f"{self.result_df.iloc[1, 0] - self.result_df.iloc[0, 0]:.2f}"
+        self.scene_info.task_info['dt'] = f"{self.result_df.iloc[1, 0] - self.result_df.iloc[0, 0]:.2f}"
         # 解析opendrive路网文件
-        self.road_info = parse_opendrive(self.scene_info['xodr_file_path'])
+        self.road_info = parse_opendrive(self.scene_info.source_file['xodr'])
         # 进行可视化回放
         self.replay_create_ax()
         ani = Player(self.fig, self.replay_update, playerax=self.ax_player, init_func=self.plot_static, interval=100, repeat=False, maxi=len(self.result_df)-1)
         if save_path:
             ani.save(save_path, writer='pillow', fps=10)
-            # ani.save(save_path, writer='imagemagick', fps=int(1/self.scene_info['dt']))
+            # ani.save(save_path, writer='imagemagick', fps=int(1/self.scene_info.task_info['dt']))
         else:
             # self.plot_static()
             # self.update(2)
@@ -167,17 +167,17 @@ class Visualizer():
         self.table = self._plot_table(self.ax_table, self.scene_info)
         # 绘制右边测试详情区域
         self._plot_roads(self.ax_detail_bg, self.road_info, draw_arrow=True)
-        self._plot_goal(self.ax_detail_bg, self.scene_info.get('targetPos'))
+        self._plot_goal(self.ax_detail_bg, self.scene_info.task_info['targetPos'])
         
         ax_detail_range = self._update_ax_limit(self.ax_detail_bg, 
-                                               [self.scene_info['startPos'][0]-self.vis_distance, self.scene_info['startPos'][0]+self.vis_distance], 
-                                               [self.scene_info['startPos'][1]-self.vis_distance, self.scene_info['startPos'][1]+self.vis_distance])
+                                               [self.scene_info.task_info['startPos'][0]-self.vis_distance, self.scene_info.task_info['startPos'][0]+self.vis_distance], 
+                                               [self.scene_info.task_info['startPos'][1]-self.vis_distance, self.scene_info.task_info['startPos'][1]+self.vis_distance])
         self.ax_detail_obj.set_ylim(ax_detail_range[1][0], ax_detail_range[1][1])
-        if self.scene_info.get('waypoints'):
-            self._plot_waypoints(self.ax_detail_bg, self.scene_info.get('waypoints'))
+        if self.scene_info.task_info['waypoints']:
+            self._plot_waypoints(self.ax_detail_bg, self.scene_info.task_info['waypoints'])
         # 绘制左下角地图区域
         self._plot_roads(self.ax_map_bg, self.road_info)
-        self._plot_goal(self.ax_map_bg, self.scene_info.get('targetPos'))
+        self._plot_goal(self.ax_map_bg, self.scene_info.task_info['targetPos'])
         ax_map_range = self._update_ax_limit(self.ax_map_bg, *self._get_road_boundary(self.road_info))
         self.ax_map_obj.set_ylim(ax_map_range[1][0], ax_map_range[1][1])
         self.position_box = self._plot_position_box(self.ax_map_obj, ax_detail_range)
@@ -261,19 +261,19 @@ class Visualizer():
         # 加载场景信息
         self.scene_info = self._load_result_scene(mode, task)
         # 解析opendrive路网文件
-        self.road_info = parse_opendrive(self.scene_info['xodr_file_path'])
+        self.road_info = parse_opendrive(self.scene_info.source_file['xodr'])
         # 绘制路网信息
         self._plot_roads(self.ax, self.road_info, draw_arrow=True)
         ax_map_range = self._update_ax_limit(self.ax, *self._get_road_boundary(self.road_info))
         self.ax.set_ylim(ax_map_range[1][0], ax_map_range[1][1])
         # 绘制起终点
-        self.ax.scatter(self.scene_info.get('startPos')[0], self.scene_info.get('startPos')[1], color='green', marker='o', s=15, zorder=3)
-        self.ax.annotate('START', (self.scene_info.get('startPos')[0]-3, self.scene_info.get('startPos')[1]+2), fontsize=10)
-        self._plot_goal(self.ax, self.scene_info.get('targetPos'))
+        self.ax.scatter(self.scene_info.task_info['startPos'][0], self.scene_info.task_info['startPos'][1], color='green', marker='o', s=15, zorder=3)
+        self.ax.annotate('START', (self.scene_info.task_info['startPos'][0]-3, self.scene_info.task_info['startPos'][1]+2), fontsize=10)
+        self._plot_goal(self.ax, self.scene_info.task_info['targetPos'])
 
-        if self.scene_info.get('waypoints'):
-            self._plot_waypoints(self.ax, self.scene_info.get('waypoints'))
-            waypoints = np.array(list(self.scene_info['waypoints'].values()))
+        if self.scene_info.task_info['waypoints']:
+            self._plot_waypoints(self.ax, self.scene_info.task_info['waypoints'])
+            waypoints = np.array(list(self.scene_info.task_info['waypoints'].values()))
             self._update_ax_limit(self.ax,
                                   [np.min(waypoints[:, 0])-10, np.max(waypoints[:, 0])+10],
                                   [np.min(waypoints[:, 1])-10, np.max(waypoints[:, 1])+10])
@@ -435,11 +435,11 @@ class Visualizer():
             ))
         ax.annotate(key, (x, y), fontsize=8, zorder=5)
 
-    def _plot_table(self, ax, scene_info: dict):
+    def _plot_table(self, ax, scene_info: ScenarioInfo):
         """绘制初始化表格信息"""
-        data = [['scene', scene_info['scenarioName']],
-                ['mode', scene_info['scenarioType']],
-                ['dt', scene_info['dt']],
+        data = [['scene', scene_info.name],
+                ['mode', scene_info.type],
+                ['dt', scene_info.task_info['dt']],
                 ['t', None],
                 ['end', None],
                 ['acc', None],
@@ -461,13 +461,10 @@ class Visualizer():
 
         return table
 
-    def _load_result_scene(self, mode: str, task: str) -> dict:
+    def _load_result_scene(self, mode: str, task: str) -> ScenarioInfo:
         """加载输出文件对应的测试场景"""
         sm = select_scenario_manager(mode, {'tasks': [task]})
         if sm.next():
-            if mode == 'REPLAY':
-                controller = ReplayController(visualize=False)
-                controller.init(sm.cur_scene)
             return sm.cur_scene
         else:
             raise ValueError(f"Failed to load scenario: {task}")

@@ -5,6 +5,7 @@ import numpy as np
 import re
 import xml.dom.minidom
 
+from .ScenarioInfo import ScenarioInfo
 from .ScenarioManagerBase import ScenarioManagerBase
 
 class ScenarioManagerForFragment(ScenarioManagerBase):
@@ -62,20 +63,27 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
         scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
         goal, vehicles = self._parse_openscenario(self._find_file_with_suffix(scene_dir, '.xosc'))
         output_name = f"{self.scenario_type}_{self.cur_scene_num}_{self.tasks[self.cur_scene_num]}_result.csv"
-        scene_info = {
-            'scenarioNum': self.cur_scene_num,
-            'scenarioName': self.tasks[self.cur_scene_num],
-            'scenarioType': self.scenario_type,
-            'tess_file_path': self._find_file_with_suffix(scene_dir, '.tess'),
-            'xodr_file_path': self._find_file_with_suffix(scene_dir, '.xodr'),
-            'xosc_file_path': self._find_file_with_suffix(scene_dir, '.xosc'),
-            'output_path': os.path.join(self.output_path, output_name),
-            'startPos': [vehicles[0]['x'], vehicles[0]['y']],
-            'targetPos': goal,
-            'vehicle_init_status': vehicles,
-            'dt': self.dt,
-        }
-        return scene_info
+        return ScenarioInfo(
+            num = self.cur_scene_num,
+            name = self.tasks[self.cur_scene_num],
+            type = self.scenario_type,
+            source_file = {
+                "xodr": self._find_file_with_suffix(scene_dir, '.xodr'), 
+                "xosc": self._find_file_with_suffix(scene_dir, '.xodr'),
+                "json": "", 
+                "tess": self._find_file_with_suffix(scene_dir, '.tess')
+                },
+            output_path = os.path.join(self.output_path, output_name),
+            task_info = {
+                "startPos": [vehicles[0]['x'], vehicles[0]['y']], 
+                "targetPos": goal, 
+                "waypoints": [], 
+                "dt": self.dt,
+            },
+            additional_info = {
+                'vehicle_init_status': vehicles,
+            }
+        )
     
     def _parse_openscenario(self, file_dir: str):
         vehicles = {}

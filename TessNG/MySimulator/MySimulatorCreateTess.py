@@ -23,7 +23,7 @@ class MySimulatorCreateTess(QObject, PyCustomerSimulator):
         simuiface = iface.simuInterface()
         netiface = iface.netInterface()
 
-        self.scenario_manager = select_scenario_manager(task_dir=os.path.join(os.path.dirname(__file__), '../../scenario/fragment'), mode='FRAGMENT', config=config)
+        self.scenario_manager = select_scenario_manager(mode='FRAGMENT', config=config)
 
         failed_tasks = []
 

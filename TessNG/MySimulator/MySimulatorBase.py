@@ -4,6 +4,7 @@ import math
 from ..DockWidget import *
 from ..DLLs.Tessng import *
 
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.recorder import Recorder
 from utils.observation import Observation
 from utils.functions import convertAngle, calcDistance, testFinish, check_action, updateEgoPos, kill_process
@@ -32,7 +33,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.radius = 50
 
         # 测试场景信息
-        self.scenario_info = None
+        self.scenario_info = ScenarioInfo()
         # 实例化规控器
         self.planner = None
 
@@ -65,9 +66,9 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         simuiface.setSimuAccuracy(1 / self.dt)
-        startEndPos["startPos"] = self.scenario_info.get('startPos', [])
-        startEndPos["endPos"] = self.scenario_info.get('targetPos', [])
-        waypoints["waypoints"] = self.scenario_info.get('waypoints', [])
+        startEndPos["startPos"] = self.scenario_info.task_info['startPos']
+        startEndPos["endPos"] = self.scenario_info.task_info['targetPos']
+        waypoints["waypoints"] = self.scenario_info.task_info['waypoints']
         return True
 
     def _paintMyVehicle(self, pIVehicle: IVehicle):
@@ -148,7 +149,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         if self.nextEgoInfo:
             egoPos = [self.nextEgoInfo['x'], self.nextEgoInfo['y']]
         else:
-            egoPos = self.scenario_info['startPos']
+            egoPos = self.scenario_info.task_info['startPos']
 
         vehicleInfo = {}
         vehicleTotal = Observation()
@@ -170,7 +171,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
 
         # TODO: 目前设定在预热时间3秒后开始检测终止条件
         if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 3000:
-            end = testFinish(goal=self.scenario_info['targetPos'],
+            end = testFinish(goal=self.scenario_info.task_info['targetPos'],
                               vehicleInfo=vehicleInfo,
                               outOfTime=(currentTestTime/1000)>=self.maxTestTime,
                               outOfMap=self.outSideTessngNet
@@ -244,6 +245,6 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.mainStep(simuiface, netiface)
                       
     def afterStop(self):
-        self.recorder.output(self.scenario_info['output_path'])
+        self.recorder.output(self.scenario_info.output_path)
         kill_process(os.getpid())
 

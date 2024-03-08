@@ -5,6 +5,8 @@ import xml.dom.minidom
 import math
 import numpy as np
 import re
+
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.opendrive2discretenet import parse_opendrive
 
 class ReplayParser():
@@ -14,13 +16,13 @@ class ReplayParser():
     def __init__(self):
         self.replay_info = ReplayInfo()
 
-    def parse(self, scenario_info: dict) -> ReplayInfo:
+    def parse(self, scenario_info: ScenarioInfo) -> ReplayInfo:
         self.replay_info = ReplayInfo()
-        self._parse_openscenario(scenario_info['xosc_file_path'])
-        self._parse_opendrive(scenario_info['xodr_file_path'])
-        if scenario_info.get('json_file_path'):
-            self._parse_light_json(scenario_info['json_file_path'])
-        self.replay_info.add_settings(scenario_name=scenario_info['scenarioName'], scenario_type= scenario_info['scenarioType'])
+        self._parse_opendrive(scenario_info.source_file['xodr'])
+        self._parse_openscenario(scenario_info.source_file['xosc'])
+        if scenario_info.source_file['json']:
+            self._parse_light_json(scenario_info.source_file['json'])
+        self.replay_info.add_settings(scenario_name=scenario_info.name, scenario_type=scenario_info.type)
         return self.replay_info
 
     def _parse_light_json(self, file_dir: str) -> None:

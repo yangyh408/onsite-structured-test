@@ -1,12 +1,12 @@
 from .MySimulatorBase import MySimulatorBase
 from ..DLLs.Tessng import *
 
-from utils.ScenarioManager import format_scenario_info
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.functions import getTessNGCarLength
 
 # 片段式仿真测试模块
 class MySimulatorFragment(MySimulatorBase):
-    def __init__(self, config: dict, planner: object, scene_info: dict):
+    def __init__(self, config: dict, planner: object, scene_info: ScenarioInfo):
         MySimulatorBase.__init__(self)
 
         # 测试类型
@@ -17,7 +17,7 @@ class MySimulatorFragment(MySimulatorBase):
         self.maxTestTime = config.get('maxTestTime', 30)
         # 实例化规控器并初始化
         self.planner = planner
-        self.planner.init(format_scenario_info(scene_info))
+        self.planner.init(scene_info.format())
         # 加载场景信息
         self.scenario_info = scene_info
         # 仿真预热时间
@@ -26,7 +26,7 @@ class MySimulatorFragment(MySimulatorBase):
         self.radius = 50
 
     def _addCar(self, simuiface: SimuInterface, netiface: NetInterface):
-        for veh_id, veh_info in self.scenario_info['vehicle_init_status'].items():
+        for veh_id, veh_info in self.scenario_info.additional_info['vehicle_init_status'].items():
             veh_info['type'] = getTessNGCarLength(veh_info['length'])
             self._createVehicle(simuiface, netiface, veh_info)
     

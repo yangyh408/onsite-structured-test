@@ -1,5 +1,6 @@
 from .parser import ReplayParser
 
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.observation import Observation
 from utils.functions import detectCollision, is_point_inside_rect
 from utils.logger import logger
@@ -17,14 +18,8 @@ class ReplayController():
             from utils.visualizer import Visualizer
             self.visualizer = Visualizer()
 
-    def init(self, scenario_info: dict) -> Observation:
+    def init(self, scenario_info: ScenarioInfo) -> Observation:
         self.control_info = self.parser.parse(scenario_info)
-        scenario_info['startPos'] = [self.control_info.ego_info['x'], self.control_info.ego_info['y']]
-        scenario_info['targetPos'] = [
-            [self.control_info.test_setting['goal']['x'][0], self.control_info.test_setting['goal']['y'][0]],
-            [self.control_info.test_setting['goal']['x'][1], self.control_info.test_setting['goal']['y'][1]],
-        ]
-        scenario_info['dt'] = self.control_info.test_setting['dt']
         if self.visualize:
             self.visualizer.live_init(scenario_info, self.control_info.road_info)
 

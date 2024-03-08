@@ -1,10 +1,10 @@
 from .MySimulatorBase import MySimulatorBase
 from ..DLLs.Tessng import *
 
-from utils.ScenarioManager import format_scenario_info
+from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 
 class MySimulatorSerial(MySimulatorBase):
-    def __init__(self, config: dict, planner: object, scene_info: dict):
+    def __init__(self, config: dict, planner: object, scene_info: ScenarioInfo):
         MySimulatorBase.__init__(self)
 
         # 测试类型
@@ -15,7 +15,7 @@ class MySimulatorSerial(MySimulatorBase):
         self.maxTestTime = config.get('maxTestTime', 180)
         # 实例化规控器
         self.planner = planner
-        self.planner.init(format_scenario_info(scene_info))
+        self.planner.init(scene_info.format())
         # 加载场景信息
         self.scenario_info = scene_info
         # 仿真预热时间
@@ -25,8 +25,8 @@ class MySimulatorSerial(MySimulatorBase):
 
     def _addCar(self, simuiface: SimuInterface, netiface: NetInterface):
         ego_info = {
-            "x": self.scenario_info['startPos'][0],
-            "y": self.scenario_info['startPos'][1],
+            "x": self.scenario_info.task_info['startPos'][0],
+            "y": self.scenario_info.task_info['startPos'][1],
             "v": 10,
             "type": 1,
             "name": self.EgoName
