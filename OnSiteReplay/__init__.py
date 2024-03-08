@@ -11,7 +11,7 @@ def run(mode_config: dict, planner: object, scene_info: dict) -> None:
     controller = ReplayController(mode_config['visualize'])
     recorder = Recorder()
 
-    action = [float('nan'), float('nan')]
+    action = [0, 0]
 
     # 回放测试控制器初始化，并返回主车第一帧信息
     observation = controller.init(scene_info)

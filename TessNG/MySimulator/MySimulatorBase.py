@@ -53,7 +53,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 场景解析锁
         self.scenarioLock = 0
         # 主车控制量
-        self.action = [float('nan'), float('nan')]
+        self.action = [0, 0]
         # 下一帧主车信息
         self.nextEgoInfo = {}
         # TODO: 手动开启仿真，但存在稳定性问题，暂时停止使用
@@ -94,8 +94,8 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                     # 如果在路段上，获取到正在路段上的车道编号
                     target_lane_id = currentLinkLane.id()
                 else:
-                    # 如果当前车辆在连接段上，.lane() 取到的是车道连接所在的上游车道
-                    currentLinkLaneConnector = vehicle.lane()
+                    # 如果当前车辆在连接段上，.laneConnector() 取到的是车道连接所在的上游车道
+                    currentLinkLaneConnector = vehicle.laneConnector()
                     # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
                     target_lane_id = currentLinkLaneConnector.id()
 
