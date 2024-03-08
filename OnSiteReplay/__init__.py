@@ -2,7 +2,7 @@ from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.recorder import Recorder
 from utils.functions import check_action
 
-from .controller import ReplayController
+from .ReplayController import ReplayController
 
 def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
     controller = ReplayController(mode_config['visualize'])

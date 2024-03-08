@@ -1,4 +1,4 @@
-from .info import ReplayInfo
+from .ReplayInfo import ReplayInfo
 import json
 import xml.etree.ElementTree as ET
 import xml.dom.minidom

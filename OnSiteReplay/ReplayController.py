@@ -1,4 +1,4 @@
-from .parser import ReplayParser
+from .ReplayParser import ReplayParser
 
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.observation import Observation
