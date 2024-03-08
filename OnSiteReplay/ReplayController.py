@@ -1,12 +1,12 @@
-from .ReplayParser import ReplayParser
+import numpy as np
+import copy
 
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.observation import Observation
 from utils.functions import detectCollision, is_point_inside_rect
 from utils.logger import logger
 
-import numpy as np
-import copy
+from .ReplayParser import ReplayParser
 
 
 class ReplayController():

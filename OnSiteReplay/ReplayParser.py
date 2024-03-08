@@ -1,4 +1,3 @@
-from .ReplayInfo import ReplayInfo
 import json
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
@@ -8,6 +7,9 @@ import re
 
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.opendrive2discretenet import parse_opendrive
+
+from .ReplayInfo import ReplayInfo
+
 
 class ReplayParser():
     """
