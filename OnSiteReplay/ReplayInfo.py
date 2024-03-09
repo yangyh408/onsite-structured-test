@@ -18,16 +18,9 @@ class ReplayInfo():
         self.light_info = {}
         self.road_info = {}
         self.test_setting = {
-            "scenario_name": None,
-            "scenario_type": None,
             "t": 0,
             "dt": 0.01,
             "max_t": 10,
-            "goal": {
-                "x": [-10, 10],
-                "y": [-10, 10]
-            },
-            "end": -1,
             "map_type":None,
             "map_range": {
                 "x": [0, 0],
@@ -99,17 +92,14 @@ class ReplayInfo():
             if value is not None:
                 self.pedestrian_traj[id]['shape'][key] = value
 
-    def add_settings(self, scenario_name=None, scenario_type=None, dt=None, max_t=None, goal_x=None, goal_y=None):
+    def add_settings(self, dt=None, max_t=None):
         """
         该函数实现向test_setting中添加测试环境相关信息
         """
-        for key, value in zip(['scenario_name', 'scenario_type', 'dt', 'max_t'],
-                              [scenario_name, scenario_type, dt, max_t]):
+        for key, value in zip(['dt', 'max_t'],
+                              [dt, max_t]):
             if value is not None:
                 self.test_setting[key] = value
-        for key, value in zip(['x', 'y'], [goal_x, goal_y]):
-            if value is not None:
-                self.test_setting['goal'][key] = value
 
     def _add_vehicle_ego(self, x=None, y=None, v=None, a=None, yaw=None, length=None, width=None):
         """

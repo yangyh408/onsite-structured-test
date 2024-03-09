@@ -19,13 +19,14 @@ class ReplayController():
             self.visualizer = Visualizer()
 
     def init(self, scenario_info: ScenarioInfo) -> Observation:
+        self.scenario_info = scenario_info
         self.control_info = self.parser.parse(scenario_info)
         if self.visualize:
             self.visualizer.live_init(scenario_info, self.control_info.road_info)
 
         observation = Observation()
         observation.vehicle_info['ego'] = self.control_info.ego_info
-        observation.test_info['dt'] = self.control_info.test_setting['dt']
+        observation.test_info['dt'] = self.scenario_info.task_info['dt']
         return observation
     
     def update_frame(self, observation: Observation):
@@ -58,18 +59,18 @@ class ReplayController():
         # 拷贝一份旧观察值
         new_observation = copy.copy(old_observation)
         # 小数点位数，避免浮点数精度问题
-        decimal_places = len(str(self.control_info.test_setting['dt']).split('.')[-1])
+        decimal_places = len(str(self.scenario_info.task_info['dt']).split('.')[-1])
         # 首先修改时间，新时间=t+dt
         new_observation.test_info['t'] = round(float(
             old_observation.test_info['t'] +
-            self.control_info.test_setting['dt']
+            self.scenario_info.task_info['dt']
         ), decimal_places)
         # 修改本车的位置，方式是前向欧拉更新，1.根据旧速度更新位置；2.然后更新速度。
         # 速度和位置的更新基于自行车模型。
         # 首先分别取出加速度和方向盘转角
         a, rot = action
         # 取出步长
-        dt = self.control_info.test_setting['dt']
+        dt = self.scenario_info.task_info['dt']
         # 取出本车的各类信息
         x, y, v, yaw, width, length = [float(old_observation.vehicle_info['ego'][key]) for key in ['x', 'y', 'v', 'yaw', 'width', 'length']]
 
@@ -162,8 +163,7 @@ class ReplayController():
 
         # 检查是否已经到达终点
         if is_point_inside_rect(
-            [[self.control_info.test_setting['goal']['x'][0], self.control_info.test_setting['goal']['y'][0]],
-             [self.control_info.test_setting['goal']['x'][1], self.control_info.test_setting['goal']['y'][1]]],
+            self.scenario_info.task_info['targetPos'],
             [observation.vehicle_info['ego']['x'], observation.vehicle_info['ego']['y']]
         ):
             status = 1

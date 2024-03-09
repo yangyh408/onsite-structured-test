@@ -24,7 +24,6 @@ class ReplayParser():
         self._parse_openscenario(scenario_info.source_file['xosc'])
         if scenario_info.source_file['json']:
             self._parse_light_json(scenario_info.source_file['json'])
-        self.replay_info.add_settings(scenario_name=scenario_info.name, scenario_type=scenario_info.type)
         return self.replay_info
 
     def _parse_light_json(self, file_dir: str) -> None:
@@ -212,14 +211,6 @@ class ReplayParser():
                     a=round(a, 2),
                     yaw=round(yaw, 3)
                 )
-
-        # 获取行驶目标, goal
-        goal_init = ego_node.childNodes[5].data
-        goal = [float(i) for i in re.findall('-*\d+\.\d+', goal_init)]
-        self.replay_info.add_settings(
-            goal_x=goal[:2],
-            goal_y=goal[2:]
-        )
         # 步长与最大时间
         self.replay_info._get_dt_maxt()
 
