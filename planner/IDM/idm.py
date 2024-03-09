@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 from planner.plannerBase import PlannerBase
+from utils.observation import Observation
 
 class IDM(PlannerBase):
     def __init__(self, a_bound=5.0, exv=40, t=1.2, a=2.22, b=2.4, gama=4, s0=1.0, s1=2.0):
@@ -33,12 +34,16 @@ class IDM(PlannerBase):
         print(scenario_dict)
         print("----------------------------------------------------------------")
 
-    def act(self, observation):
-        frame = pd.DataFrame()
-        for key, value in observation.vehicle_info.items():
-            sub_frame = pd.DataFrame(value, columns=['x', 'y', 'v', 'yaw', 'length', 'width'],index=[key])
-
-            frame = pd.concat([frame, sub_frame])
+    def act(self, observation: Observation):
+        frame = pd.DataFrame(
+            vars(observation.ego_info),
+            columns=['x', 'y', 'v', 'yaw', 'length', 'width'], 
+            index=['ego']
+        )
+        for obj_type in observation.object_info:
+            for obj_name, obj_info in observation.object_info[obj_type].items():
+                sub_frame = pd.DataFrame(vars(obj_info), columns=['x', 'y', 'v', 'yaw', 'length', 'width'],index=[obj_name])
+                frame = pd.concat([frame, sub_frame])
         state = frame.to_numpy()
 
         return [self.deside_acc(state), 0]

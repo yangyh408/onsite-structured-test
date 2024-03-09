@@ -1,12 +1,13 @@
 import os
 import math
+import copy
 
 from ..DockWidget import *
 from ..DLLs.Tessng import *
 
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 from utils.recorder import Recorder
-from utils.observation import Observation
+from utils.observation import Observation, EgoStatus
 from utils.functions import convertAngle, calcDistance, testFinish, check_action, updateEgoPos, kill_process
 from utils.netStruct import paintPos, startEndPos, waypoints
 
@@ -55,12 +56,8 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         self.scenarioLock = 0
         # 主车控制量
         self.action = [0, 0]
-        # 下一帧主车信息
-        self.nextEgoInfo = {}
-        # TODO: 手动开启仿真，但存在稳定性问题，暂时停止使用
-        # iface = tessngIFace()
-        # simuiface = iface.simuInterface()
-        # simuiface.startSimu()
+        # 记录主车信息
+        self.ego_info = None
 
     def ref_beforeStart(self, ref_keepOn):
         iface = tessngIFace()
@@ -75,28 +72,31 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         if pIVehicle.name() == self.EgoName:
             # 主车变蓝
             pIVehicle.setColor("#00BFFF")
-        elif pIVehicle.name() in self.observation.vehicle_info.keys():
+        elif pIVehicle.name() in self.observation.object_info['vehicle'].keys():
             # 被Observation记录的背景车变紫
             pIVehicle.setColor("#C318FF")
         else:
             # 其余背景车保持白色
             pIVehicle.setColor("#F8F8FF")
 
-    def _moveEgo(self, vehicle, position):
-        if vehicle.name() == self.EgoName and position:
+    def _moveEgo(self, pIVehicle: IVehicle):
+        if self.ego_info is None:
+            return
+        
+        if pIVehicle.name() == self.EgoName:
             iface = tessngIFace()
             netiface = iface.netInterface()
-            lLocations = netiface.locateOnCrid(QPointF(m2p(position['x']), - m2p(position['y'])), 9)
+            lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
             
             if lLocations:
                 # 计算车辆当前所在车道或所在车道连接的上游车道，作为匹配时的目标车道
-                if vehicle.roadIsLink():
-                    currentLinkLane = vehicle.lane()
+                if pIVehicle.roadIsLink():
+                    currentLinkLane = pIVehicle.lane()
                     # 如果在路段上，获取到正在路段上的车道编号
                     target_lane_id = currentLinkLane.id()
                 else:
                     # 如果当前车辆在连接段上，.laneConnector() 取到的是车道连接所在的上游车道
-                    currentLinkLaneConnector = vehicle.laneConnector()
+                    currentLinkLaneConnector = pIVehicle.laneConnector()
                     # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
                     target_lane_id = currentLinkLaneConnector.id()
 
@@ -115,27 +115,29 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                             break
 
                 # 强制移动av/mv车辆
-                vehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
+                pIVehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
                 return
 
-    def _delVehicle(self, pIVehicle) -> bool:
-        # 删除在指定消失路段的车辆
-        if pIVehicle.name() != self.EgoName and self.outSideTessngNet:
-            return True
-        else:
-            return False
+    # def _delVehicle(self, pIVehicle) -> bool:
+    #     # 删除在指定消失路段的车辆
+    #     if pIVehicle.name() == self.EgoName and not self.shadow_ego:
+    #         print("===================Ego not found.===================")
+    #         # return True
+    #     else:
+    #         return False
     
     def _checkOutSideMap(self):
+        if self.ego_info is None:
+            return
         iface = tessngIFace()
         netiface = iface.netInterface()
-        if self.nextEgoInfo:
-            lLocations = netiface.locateOnCrid(QPointF(m2p(self.nextEgoInfo['x']), - m2p(self.nextEgoInfo['y'])), 9)
-            if not lLocations:
-                self.outSideTessngNet = True
+        lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
+        if not lLocations:
+            self.outSideTessngNet = True
         
     def afterStep(self, pIVehicle: IVehicle) -> None:
         self._paintMyVehicle(pIVehicle)
-        self._moveEgo(pIVehicle, self.nextEgoInfo)
+        self._moveEgo(pIVehicle)
         # self._delVehicle(pIVehicle)
         self._checkOutSideMap()
 
@@ -146,47 +148,39 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
 		:return: 返回给控制算法的observation信息
 		"""
         lAllVehiStatus = tessngSimuiface.getVehisStatus()
-        if self.nextEgoInfo:
-            egoPos = [self.nextEgoInfo['x'], self.nextEgoInfo['y']]
-        else:
-            egoPos = self.scenario_info.task_info['startPos']
 
-        vehicleInfo = {}
-        vehicleTotal = Observation()
+        new_observation = Observation()
+        # 添加主车信息
+        new_observation.ego_info = self.ego_info
+        # 添加背景车信息
         for vehicleStatus in lAllVehiStatus:
-            if calcDistance(egoPos, [p2m(vehicleStatus.mPoint.x()), -p2m(vehicleStatus.mPoint.y())]) < self.radius:
-                vehicleInfo[self.vehicleMap.get(vehicleStatus.vehiId, vehicleStatus.vehiId)] = {
-                    'length': round(p2m(vehicleStatus.mrLength), 2),
-                    'width': round(p2m(vehicleStatus.mrWidth), 2),
-                    'x': round(p2m(vehicleStatus.mPoint.x()), 3),
-                    'y': round(-p2m(vehicleStatus.mPoint.y()), 3),
-                    'v': round(p2m(vehicleStatus.mrSpeed), 3),
-                    'a': round(p2m(vehicleStatus.mrAcce), 3),
-                    'yaw': round(math.radians(convertAngle(vehicleStatus.mrAngle)), 3),
-                }
-        if self.nextEgoInfo:
-            vehicleInfo[self.EgoName] = self.nextEgoInfo
-        vehicleTotal.vehicle_info = vehicleInfo
-        vehicleTotal.light_info = {}
-
-        # TODO: 目前设定在预热时间3秒后开始检测终止条件
+            if self.vehicleMap.get(vehicleStatus.vehiId) != self.EgoName:
+                if calcDistance([self.ego_info.x, self.ego_info.y], [p2m(vehicleStatus.mPoint.x()), -p2m(vehicleStatus.mPoint.y())]) < self.radius:
+                    new_observation.update_object_info(
+                        'vehicle', 
+                        self.vehicleMap.get(vehicleStatus.vehiId, str(vehicleStatus.vehiId)), 
+                        length=p2m(vehicleStatus.mrLength),
+                        width=p2m(vehicleStatus.mrWidth),
+                        x=p2m(vehicleStatus.mPoint.x()),
+                        y=-p2m(vehicleStatus.mPoint.y()),
+                        v=p2m(vehicleStatus.mrSpeed),
+                        a=p2m(vehicleStatus.mrAcce),
+                        yaw=math.radians(convertAngle(vehicleStatus.mrAngle)),
+                    )
+            else:
+                self.shadow_ego = True
+        # 更新测试结束信息
         if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 3000:
-            end = testFinish(goal=self.scenario_info.task_info['targetPos'],
-                              vehicleInfo=vehicleInfo,
-                              outOfTime=(currentTestTime/1000)>=self.maxTestTime,
-                              outOfMap=self.outSideTessngNet
-                              )
+            end = testFinish(
+                goal=self.scenario_info.task_info['targetPos'],
+                observation=new_observation,
+                outOfTime=(currentTestTime/1000)>=self.maxTestTime,
+                outOfMap=self.outSideTessngNet
+            )
         else:
             end = -1
-        
-        vehicleTotal.test_info = {
-            "t": currentTestTime / 1000, 
-            "dt": self.dt,
-            "end": end,
-            "acc": self.action[0],
-            "rot": self.action[1],
-        }
-        return vehicleTotal
+        new_observation.update_test_info(t=currentTestTime/1000, dt=self.dt, end=end)
+        return new_observation
     
     def _createVehicle(self, simuiface: SimuInterface, netiface: NetInterface, veh_info: dict):
         lLocations = netiface.locateOnCrid(QPointF(veh_info['x'], -veh_info['y']), 9)
@@ -195,7 +189,6 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             dvp.vehiTypeCode = veh_info['type']
             dvp.dist = lLocations[0].distToStart
             dvp.speed = m2p(veh_info['v'])
-            # dvp.color = "#00FFFF" if veh_info['name'] == self.EgoName else "#DC143C"
             dvp.name = str(veh_info['name'])
             # 如果是路段
             if lLocations[0].pLaneObject.isLane():
@@ -215,6 +208,21 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def _addCar(self, simuiface: SimuInterface, netiface: NetInterface):
         pass
 
+    def _createEgoInfo(self, simuiface: SimuInterface, netiface: NetInterface):
+        lAllVehiStatus = simuiface.getVehisStatus()
+        for vehicleStatus in lAllVehiStatus:
+            if self.vehicleMap.get(vehicleStatus.vehiId) == self.EgoName:
+                self.ego_info = EgoStatus(
+                    length=p2m(vehicleStatus.mrLength),
+                    width=p2m(vehicleStatus.mrWidth),
+                    x=p2m(vehicleStatus.mPoint.x()),
+                    y=-p2m(vehicleStatus.mPoint.y()),
+                    v=p2m(vehicleStatus.mrSpeed),
+                    yaw=math.radians(convertAngle(vehicleStatus.mrAngle)),
+                    a=0,
+                    rot=0
+                )
+
     def mainStep(self, simuiface, netiface):
         simuTime = simuiface.simuTimeIntervalWithAcceMutiples()
         # batchNum = simuiface.batchNumber()
@@ -222,21 +230,23 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             if not self.createCarLock:
                 self._addCar(simuiface, netiface)
                 self.createCarLock = 1
-
-            self.observation = self._tessngServerMsg(simuiface, simuTime)
-            if self.observation.test_info['end'] == -1:
-                if self.observation.vehicle_info.get(self.EgoName) is not None:
-                    self.recorder.record(self.action, self.observation)
-                    new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
-                    self.action = check_action(self.observation.test_info['dt'], self.action, new_action)
-                    self.nextEgoInfo = updateEgoPos(self.action, self.observation)
-                    paintPos["pos"] = self.nextEgoInfo
-                # else:
-                #     print("===================Ego not found.===================")
+            
+            if self.ego_info == None:
+                self._createEgoInfo(simuiface, netiface)
             else:
-                self.finishTest = True
-                self.recorder.record(self.action, self.observation)
-                self.forStopSimu.emit()
+                self.observation = self._tessngServerMsg(simuiface, simuTime)
+                if self.observation.test_info['end'] == -1:
+                        self.recorder.record(self.observation)
+                        new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+                        self.action = check_action(self.dt, self.action, new_action)
+                        updateEgoPos(self.action, self.dt, self.ego_info)
+                        paintPos["pos"] = self.ego_info.__dict__
+                    # else:
+                    #     print("===================Ego not found.===================")
+                else:
+                    self.finishTest = True
+                    self.recorder.record(self.observation)
+                    self.forStopSimu.emit()
 
     def afterOneStep(self):
         iface = tessngIFace()
@@ -247,4 +257,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def afterStop(self):
         self.recorder.output(self.scenario_info.output_path)
         kill_process(os.getpid())
+
+    def get_observation(self):
+        return copy.deepcopy(self.observation)
 

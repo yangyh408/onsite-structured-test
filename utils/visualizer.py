@@ -1,10 +1,12 @@
 from utils.opendrive2discretenet import parse_opendrive
 from utils.ScenarioManager import select_scenario_manager
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
+from utils.observation import Observation, EgoStatus, ObjectStatus
 
 import os
 import numpy as np
 import pandas as pd
+from typing import Dict
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -115,6 +117,12 @@ class Visualizer():
         self.fig_height = 6         # 画布高度
         self.fig = None             # 画布实例
         self.vis_distance = 30      # 测试详情区域主车周围可视化范围
+        self.object_color = {          # 不同类型物体的颜色映射
+            'ego': 'orange',
+            'vehicle': 'cornflowerblue',
+            'bicycle': 'lightgreen',
+            'pedestrian': 'lightcoral',
+        }
     
     def replay_result(self, result_path: str, save_path: str=None):
         """可视化回放接口"""
@@ -185,10 +193,10 @@ class Visualizer():
 
     def replay_update(self, frame: int):
         """可视化回放的界面更新"""
-        test_info, objects_info = self._get_frame_info_from_result(frame)
-        self.update_dynamic(test_info, objects_info)
+        test_info, observation = self._get_frame_info_from_result(frame)
+        self.update_dynamic(test_info, observation.ego_info, observation.object_info)
 
-    def update_dynamic(self, test_info, objects_info):
+    def update_dynamic(self, test_info: dict, ego_info: EgoStatus, object_info: Dict[str, ObjectStatus]):
         """对每一帧进行画布更新"""
         self.ax_detail_obj.cla()
         self.ax_detail_obj.set_yticks([])
@@ -196,16 +204,14 @@ class Visualizer():
         # 更新表格信息
         self._update_table(test_info)
         # 更新右边测试详情区域物体信息
-        new_range = [] 
-        for obj_name, obj_state in objects_info.items():
-            if obj_name == 'ego':
-                new_range = self._update_ax_limit(self.ax_detail_bg, 
-                                                  [obj_state['x']-self.vis_distance, obj_state['x']+self.vis_distance], 
-                                                  [obj_state['y']-self.vis_distance, obj_state['y']+self.vis_distance])
-                self.ax_detail_obj.set_ylim(new_range[1][0], new_range[1][1])
-                self._plot_single_object(self.ax_detail_obj, obj_name, obj_state, c='orange')
-            else:
-                self._plot_single_object(self.ax_detail_obj, obj_name, obj_state)
+        new_range = self._update_ax_limit(self.ax_detail_bg, 
+                                                  [ego_info.x-self.vis_distance, ego_info.x+self.vis_distance], 
+                                                  [ego_info.y-self.vis_distance, ego_info.y+self.vis_distance])
+        self.ax_detail_obj.set_ylim(new_range[1][0], new_range[1][1])
+        self._plot_single_object(self.ax_detail_obj, 'ego', ego_info, c=self.object_color['ego'])
+        for obj_type in object_info.keys():
+            for obj_id, obj_state in object_info[obj_type].items():
+                self._plot_single_object(self.ax_detail_obj, obj_id, obj_state, c=self.object_color[obj_type])
         # 更新左下角地图区域定位框位置
         if new_range:
             self.position_box.set_xy([new_range[0][0], new_range[1][0]])
@@ -235,20 +241,19 @@ class Visualizer():
         self.plot_static()
         plt.ion()
 
-    def live_update(self, observation):
+    def live_update(self, observation: Observation):
         """REPLAY模式下进行可视化界面更新"""
         test_info = {
             't': observation.test_info['t'],
-            'end': self._format_number(observation.test_info['end'], 0),
-            'acc': self._format_number(observation.test_info['acc'], 2),
-            'rot': self._format_number(observation.test_info['rot'], 2),
-            'ego_x': self._format_number(observation.vehicle_info['ego']['x'], 2),
-            'ego_y': self._format_number(observation.vehicle_info['ego']['y'], 2),
-            'ego_v': self._format_number(observation.vehicle_info['ego']['v'], 2),
-            'ego_yaw': self._format_number(observation.vehicle_info['ego']['yaw'], 2),
+            'end': observation.test_info['end'],
+            'acc': observation.ego_info.a,
+            'rot': observation.ego_info.rot,
+            'ego_x': observation.ego_info.x,
+            'ego_y': observation.ego_info.y,
+            'ego_v': observation.ego_info.v,
+            'ego_yaw': observation.ego_info.yaw,
         }
-        objects_info = observation.object_info()
-        self.update_dynamic(test_info, objects_info)
+        self.update_dynamic(test_info, observation.ego_info, observation.object_info)
         if observation.test_info['end'] != -1:
             plt.ioff()
             plt.close()
@@ -416,9 +421,9 @@ class Visualizer():
         ax.add_patch(position_box)
         return position_box
 
-    def _plot_single_object(self, ax, key: str, objecti: dict, c='cornflowerblue'):
+    def _plot_single_object(self, ax, key: str, objecti: ObjectStatus, c='cornflowerblue'):
         """利用 matplotlib 和 patches 绘制小汽车，以 x 轴为行驶方向"""
-        x, y, yaw, width, length = [float(objecti[i]) for i in ['x', 'y', 'yaw', 'width', 'length']]
+        x, y, yaw, width, length = [float(objecti.__getattribute__(i)) for i in ['x', 'y', 'yaw', 'width', 'length']]
 
         angle = np.arctan(width / length) + yaw
         diagonal = np.sqrt(length ** 2 + width ** 2)
@@ -480,28 +485,45 @@ class Visualizer():
         
     def _get_frame_info_from_result(self, frame: int) -> dict:
         """从输出文件中获取指定帧的信息"""
+        new_observation = Observation()
+
         obj_states = ['x', 'y', 'v', 'a', 'yaw', 'width', 'length']
 
         frame_series = self.result_df.iloc[frame].dropna()
+        objects_info = {}
+        for col_name in frame_series.keys():
+            if col_name.startswith('x_') and not col_name.endswith('ego'):
+                objects_info[col_name[2:]] = {}
+
+        new_observation.update_ego_info(
+            x=frame_series['x_ego'],
+            y=frame_series['y_ego'],
+            v=frame_series['v_ego'],
+            a=frame_series['acc'],
+            yaw=frame_series['yaw_ego'],
+            rot=frame_series['rot'],
+            length=frame_series['length_ego'],
+            width=frame_series['width_ego']
+        )
+        
+        for obj in objects_info.keys():
+            if obj == 'ego':
+                continue
+            for state in obj_states:
+                objects_info[obj][state] = frame_series[f"{state}_{obj}"]
+            new_observation.update_object_info("vehicle", obj, **objects_info[obj])
+        
         test_info = {
             't': frame_series[0],
             'end': self._format_number(frame_series['end'], 0),
-            'acc': self._format_number(frame_series.get('acc', None), 2),
-            'rot': self._format_number(frame_series.get('rot', None), 2),
-            'ego_x': self._format_number(frame_series.get('x_ego', None), 2),
-            'ego_y': self._format_number(frame_series.get('y_ego', None), 2),
-            'ego_v': self._format_number(frame_series.get('v_ego', None), 2),
-            'ego_yaw': self._format_number(frame_series.get('yaw_ego', None), 2),
+            'acc': new_observation.ego_info.a,
+            'rot': new_observation.ego_info.rot,
+            'ego_x': new_observation.ego_info.x,
+            'ego_y': new_observation.ego_info.y,
+            'ego_v': new_observation.ego_info.v,
+            'ego_yaw': new_observation.ego_info.yaw,
         }
-        objects_info = {}
-        for col_name in frame_series.keys():
-            if col_name.startswith('x_'):
-                objects_info[col_name[2:]] = {}
-        
-        for obj in objects_info.keys():
-            for state in obj_states:
-                objects_info[obj][state] = frame_series[f"{state}_{obj}"]
-        return test_info, objects_info
+        return test_info, new_observation
 
     def _update_table(self, data: dict) -> None:
         """更新表格中的动态信息"""

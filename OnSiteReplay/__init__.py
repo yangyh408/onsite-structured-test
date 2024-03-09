@@ -11,19 +11,19 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
     action = [0, 0]
 
     # 回放测试控制器初始化，并返回主车第一帧信息
-    observation = controller.init(scene_info)
+    controller.init(scene_info)
     # 被测物根据场景信息进行初始化设置
     planner.init(scene_info.format())
 
     while True:
-        observation = controller.update_frame(observation)
-        recorder.record(action, observation)
-        if observation.test_info['end'] != -1:
+        controller.update_frame()
+        recorder.record(controller.get_observation())
+        if controller.observation.test_info['end'] != -1:
             recorder.output(scene_info.output_path)
             break
-        new_action = planner.act(observation)
-        action = check_action(observation.test_info['dt'], action, new_action)
-        observation = controller.update_ego(action, observation)
+        new_action = planner.act(controller.get_observation())
+        action = check_action(scene_info.task_info['dt'], action, new_action)
+        controller.update_ego(action)
 
 if __name__ == '__main__':
     run('serial', {'tasks': ['Cyz_TJST_1.json', 'Cyz_TJST_2.json']})

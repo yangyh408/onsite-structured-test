@@ -9,7 +9,7 @@ def main():
 
     # SERAIL赛道下生成包含waypoints的赛题
     # mode = 'CREATE_WAYPOINTS'
-    # config = {'task_num': 26, 'map': 'TJST_pure', 'start_lane':0, 'link_ids': [284, 181, 304, 215, 45, 178]}
+    # config = {'task_num': 26, 'map': 'TJST_pure', 'start_lane':0, 'link_ids': [284, 181]}
 
     TessNG.run(mode, config, auto_run=False)
     

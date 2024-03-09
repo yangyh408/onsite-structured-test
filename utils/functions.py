@@ -4,9 +4,11 @@ from numpy import array, linalg
 import os
 import platform
 import signal
+from typing import Dict
 
 from utils.netStruct import outSide, crash
 from utils.logger import logger
+from utils.observation import EgoStatus, ObjectStatus, Observation
 
 def convertAngle(angle1: float):
     # 把TESSNG转角与OnSite转角互相转换
@@ -30,33 +32,23 @@ def is_point_inside_rect(rect, egoPos) -> bool:
             return False
 
 def _is_collision(ego_info: dict, vehicle_info: dict) -> bool:
-    # img = np.zeros((512,512,3), np.uint8)
     rect1 = ((ego_info['x'], -ego_info['y']), (ego_info['length'], ego_info['width']),
              np.rad2deg(-ego_info['yaw']))
-    # box1 = np.int0(cv2.boxPoints(rect1))
-    # cv2.drawContours(img, [box1], 0, (0,0,255),2)
     rect2 = ((vehicle_info['x'], -vehicle_info['y']), (vehicle_info['length'], vehicle_info['width']),
              np.rad2deg(-vehicle_info['yaw']))
-    # box2 = np.int0(cv2.boxPoints(rect2))
-    # cv2.drawContours(img, [box2], 0, (0,0,255),2)
-    # cv2.imshow('Rotated Rectangle', img)
-    # cv2.waitKey(0)
     return cv2.rotatedRectangleIntersection(rect1, rect2)[0]
 
-def detectCollision(vehicleInfo: dict) -> dict:
-    ego = vehicleInfo.get('ego')
-    if ego:
-        for vehicle_id, vehicle_info in vehicleInfo.items():
-            if vehicle_id != 'ego':
-                if _is_collision(ego, vehicle_info):
-                    collideVehicle = dict(**vehicle_info, id=vehicle_id)
-                    return {
-                        'collideVehicle': collideVehicle,
-                        'ego': ego,
-                    }
+def detectCollision(ego_info: EgoStatus, object_info: Dict[str, ObjectStatus]) -> dict:
+    for obj_type in object_info.keys():
+        for vehicle_id, vehicle_info in object_info[obj_type].items():
+            if _is_collision(vars(ego_info), vars(vehicle_info)):
+                return {
+                    'collideVehicle': dict(**vars(vehicle_info), id=vehicle_id),
+                    'ego': vars(ego_info),
+                }
     return {}
 
-def testFinish(goal: list, vehicleInfo: dict, outOfTime: bool, outOfMap: bool) -> int:
+def testFinish(goal: list, observation: Observation, outOfTime: bool, outOfMap: bool) -> int:
     # 测试结束有两个条件，Ego行驶到对应的终点面域或者达到极限测试批次
     if outOfMap:
         logger.debug(f"(CODE-4): 测试车驶出道路边界")
@@ -67,25 +59,22 @@ def testFinish(goal: list, vehicleInfo: dict, outOfTime: bool, outOfMap: bool) -
         logger.debug(f"(CODE-2): 测试超时")
         return 2
 
-    if vehicleInfo.get('ego'):
-        collideInfo = detectCollision(vehicleInfo)
-        if collideInfo:
-            logger.debug(f"(CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
-            # print(f"    --> 测试车状态 x:{collideInfo['ego']['x']} y:{collideInfo['ego']['y']} "
-            #       f"yaw:{collideInfo['ego']['yaw']} length:{collideInfo['ego']['length']} "
-            #       f"width:{collideInfo['ego']['width']}")
-            # print(f"    --> 背景车状态 x:{collideInfo['collideVehicle']['x']} y:{collideInfo['collideVehicle']['y']} "
-            #       f"yaw:{collideInfo['collideVehicle']['yaw']} length:{collideInfo['collideVehicle']['length']} "
-            #       f"width:{collideInfo['collideVehicle']['width']}")
-            crash["crash"] = True
-            return 3
+    collideInfo = detectCollision(observation.ego_info, observation.object_info)
+    if collideInfo:
+        logger.debug(f"(CODE-3): 检测到测试车与背景车{collideInfo['collideVehicle']['id']}发生碰撞")
+        # print(f"    --> 测试车状态 x:{collideInfo['ego']['x']} y:{collideInfo['ego']['y']} "
+        #       f"yaw:{collideInfo['ego']['yaw']} length:{collideInfo['ego']['length']} "
+        #       f"width:{collideInfo['ego']['width']}")
+        # print(f"    --> 背景车状态 x:{collideInfo['collideVehicle']['x']} y:{collideInfo['collideVehicle']['y']} "
+        #       f"yaw:{collideInfo['collideVehicle']['yaw']} length:{collideInfo['collideVehicle']['length']} "
+        #       f"width:{collideInfo['collideVehicle']['width']}")
+        crash["crash"] = True
+        return 3
 
-        if is_point_inside_rect(goal, [vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]):
-            logger.debug(f"(CODE-1): 测试车成功抵达目标区域")
-            # print(f"    --> 测试车位置:{[vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]} 终点区域:{goal}")
-            return 1
-    else:
-        logger.debug(f"(CODE-0): 测试车已在仿真环境中删除")
+    if is_point_inside_rect(goal, [observation.ego_info.x, observation.ego_info.y]):
+        logger.debug(f"(CODE-1): 测试车成功抵达目标区域")
+        # print(f"    --> 测试车位置:{[vehicleInfo.get('ego')['x'], vehicleInfo.get('ego')['y']]} 终点区域:{goal}")
+        return 1
 
     return -1
 
@@ -110,24 +99,22 @@ def getTessNGCarLength(length: float) -> int:
             return result
     return 1
 
-def updateEgoPos(action: tuple, observation) -> dict:
-    # 根据控制量更新主车的位置
-    ego_info = {}
-    a, rot = action
-    _dt = observation.test_info['dt']
-    try:
-        x, y, v, yaw, width, length = [float(observation.vehicle_info['ego'][key]) for key in [
-            'x', 'y', 'v', 'yaw', 'width', 'length']]
-        ego_info['x'] = x + v * np.cos(yaw) * _dt  # 更新X坐标
-        ego_info['y'] = y + v * np.sin(yaw) * _dt  # 更新y坐标
-        ego_info['yaw'] = yaw + v / length * 1.7 * np.tan(rot) * _dt  # 更新偏航角
-        ego_info['v'] = max(0, v + a * _dt)  # 更新速度
-        ego_info['a'] = a  # 更新加速度
-        ego_info['width'] = width
-        ego_info['length'] = length
-    except KeyError:
-        pass
-    return ego_info
+def updateEgoPos(action: list, dt: float, ego_info: EgoStatus) -> None:
+    # 根据控制量更新参数ego_info中记录的主车状态
+    acc, rot = action
+    # 修改本车的位置，方式是前向欧拉更新，1.根据旧速度更新位置；2.然后更新速度。
+    # 速度和位置的更新基于自行车模型。
+    # 取出本车的各类信息
+    x, y, v, yaw, length = [float(ego_info.__getattribute__(key)) for key in ['x', 'y', 'v', 'yaw', 'length']]
+
+    ego_info.update(
+        x = x + v * np.cos(yaw) * dt,
+        y = y + v * np.sin(yaw) * dt,
+        yaw = yaw + v / length * 1.7 * np.tan(rot) * dt,
+        v = max(0, v + acc * dt),
+        a = acc,
+        rot = rot,
+    )
 
 def check_action(dt, prev_action, new_action):
     """检验选手返回的action是否满足动力学约束
