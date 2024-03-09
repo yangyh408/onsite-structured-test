@@ -1,6 +1,7 @@
 import os
 import math
 import copy
+import time
 
 from ..DockWidget import *
 from ..DLLs.Tessng import *
@@ -57,6 +58,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 主车控制量
         self.action = [0, 0]
         # 记录主车信息
+        self.ego_id = None
         self.ego_info = None
 
     def ref_beforeStart(self, ref_keepOn):
@@ -67,79 +69,6 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         startEndPos["endPos"] = self.scenario_info.task_info['targetPos']
         waypoints["waypoints"] = self.scenario_info.task_info['waypoints']
         return True
-
-    def _paintMyVehicle(self, pIVehicle: IVehicle):
-        if pIVehicle.name() == self.EgoName:
-            # 主车变蓝
-            pIVehicle.setColor("#00BFFF")
-        elif pIVehicle.name() in self.observation.object_info['vehicle'].keys():
-            # 被Observation记录的背景车变紫
-            pIVehicle.setColor("#C318FF")
-        else:
-            # 其余背景车保持白色
-            pIVehicle.setColor("#F8F8FF")
-
-    def _moveEgo(self, pIVehicle: IVehicle):
-        if self.ego_info is None:
-            return
-        
-        if pIVehicle.name() == self.EgoName:
-            iface = tessngIFace()
-            netiface = iface.netInterface()
-            lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
-            
-            if lLocations:
-                # 计算车辆当前所在车道或所在车道连接的上游车道，作为匹配时的目标车道
-                if pIVehicle.roadIsLink():
-                    currentLinkLane = pIVehicle.lane()
-                    # 如果在路段上，获取到正在路段上的车道编号
-                    target_lane_id = currentLinkLane.id()
-                else:
-                    # 如果当前车辆在连接段上，.laneConnector() 取到的是车道连接所在的上游车道
-                    currentLinkLaneConnector = pIVehicle.laneConnector()
-                    # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
-                    target_lane_id = currentLinkLaneConnector.id()
-
-                # 选取 最优 location
-                location = lLocations[0]  # 默认取第一个
-                for demo_location in lLocations:
-                    if demo_location.pLaneObject.isLane():
-                        # 如果匹配到了正常车道，不需要做车道预期判断
-                        location = demo_location
-                        break
-                    else:
-                        # 如果匹配到了车道连接，做车道预期判断，只取符合条件的车道
-                        lane = demo_location.pLaneObject.castToLaneConnector()
-                        if lane.fromLane().id() == target_lane_id:
-                            location = demo_location
-                            break
-
-                # 强制移动av/mv车辆
-                pIVehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
-                return
-
-    # def _delVehicle(self, pIVehicle) -> bool:
-    #     # 删除在指定消失路段的车辆
-    #     if pIVehicle.name() == self.EgoName and not self.shadow_ego:
-    #         print("===================Ego not found.===================")
-    #         # return True
-    #     else:
-    #         return False
-    
-    def _checkOutSideMap(self):
-        if self.ego_info is None:
-            return
-        iface = tessngIFace()
-        netiface = iface.netInterface()
-        lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
-        if not lLocations:
-            self.outSideTessngNet = True
-        
-    def afterStep(self, pIVehicle: IVehicle) -> None:
-        self._paintMyVehicle(pIVehicle)
-        self._moveEgo(pIVehicle)
-        # self._delVehicle(pIVehicle)
-        self._checkOutSideMap()
 
     def _tessngServerMsg(self, tessngSimuiface, currentTestTime):
         """
@@ -154,7 +83,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         new_observation.ego_info = self.ego_info
         # 添加背景车信息
         for vehicleStatus in lAllVehiStatus:
-            if self.vehicleMap.get(vehicleStatus.vehiId) != self.EgoName:
+            if vehicleStatus.vehiId != self.ego_id:
                 if calcDistance([self.ego_info.x, self.ego_info.y], [p2m(vehicleStatus.mPoint.x()), -p2m(vehicleStatus.mPoint.y())]) < self.radius:
                     new_observation.update_object_info(
                         'vehicle', 
@@ -167,8 +96,11 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                         a=p2m(vehicleStatus.mrAcce),
                         yaw=math.radians(convertAngle(vehicleStatus.mrAngle)),
                     )
+                    tessngSimuiface.getVehicle(vehicleStatus.vehiId).setColor("#C318FF")
+                else:
+                    tessngSimuiface.getVehicle(vehicleStatus.vehiId).setColor("#F8F8FF")
             else:
-                self.shadow_ego = True
+                tessngSimuiface.getVehicle(vehicleStatus.vehiId).setColor("#00BFFF")
         # 更新测试结束信息
         if tessngSimuiface.simuTimeIntervalWithAcceMutiples() >= self.preheatingTime * 1000 + 3000:
             end = testFinish(
@@ -203,7 +135,11 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                 dvp.toLaneNumber = lane_connector.toLane().number()
             vehi = simuiface.createGVehicle(dvp)
             if vehi:
-                self.vehicleMap[vehi.id()] = vehi.name()
+                if self.EgoName in vehi.name():
+                    self.ego_id = vehi.id()
+                else:
+                    self.vehicleMap[vehi.id()] = vehi.name()
+            return vehi.id()
 
     def _addCar(self, simuiface: SimuInterface, netiface: NetInterface):
         pass
@@ -211,7 +147,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
     def _createEgoInfo(self, simuiface: SimuInterface, netiface: NetInterface):
         lAllVehiStatus = simuiface.getVehisStatus()
         for vehicleStatus in lAllVehiStatus:
-            if self.vehicleMap.get(vehicleStatus.vehiId) == self.EgoName:
+            if vehicleStatus.vehiId == self.ego_id:
                 self.ego_info = EgoStatus(
                     length=p2m(vehicleStatus.mrLength),
                     width=p2m(vehicleStatus.mrWidth),
@@ -248,11 +184,84 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                     self.recorder.record(self.observation)
                     self.forStopSimu.emit()
 
+    def afterStep(self, pIVehicle: IVehicle) -> None:
+        # 每个step后对每个车辆进行遍历
+        pass
+    
+    def _checkOutSideMap(self, netiface: NetInterface):
+        if self.ego_info is None:
+            return
+        lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
+        if not lLocations:
+            self.outSideTessngNet = True
+        
+    def _isEgoExist(self, pIVehicle: IVehicle):
+        if pIVehicle:
+            if not ((pIVehicle.roadIsLink() and pIVehicle.lane()) or (not pIVehicle.roadIsLink() and pIVehicle.laneConnector())): 
+                return False
+        else:
+            return False
+        return True
+    
+    def _moveEgo(self, pIVehicle: IVehicle):
+        if self.ego_info is None:
+            return
+
+        iface = tessngIFace()
+        netiface = iface.netInterface()
+        lLocations = netiface.locateOnCrid(QPointF(m2p(self.ego_info.x), - m2p(self.ego_info.y)), 9)
+        
+        if lLocations:
+            # 计算车辆当前所在车道或所在车道连接的上游车道，作为匹配时的目标车道
+            if pIVehicle.roadIsLink():
+                currentLinkLane = pIVehicle.lane()
+                # 如果在路段上，获取到正在路段上的车道编号
+                target_lane_id = currentLinkLane.id()
+            else:
+                # 如果当前车辆在连接段上，.laneConnector() 取到的是车道连接所在的上游车道
+                currentLinkLaneConnector = pIVehicle.laneConnector()
+                # 如果现在在连接段上，获取到正在连接段上的车道，并且获取到连接段车道的上游车道
+                target_lane_id = currentLinkLaneConnector.id()
+
+            # 选取 最优 location
+            location = lLocations[0]  # 默认取第一个
+            for demo_location in lLocations:
+                if demo_location.pLaneObject.isLane():
+                    # 如果匹配到了正常车道，不需要做车道预期判断
+                    location = demo_location
+                    break
+                else:
+                    # 如果匹配到了车道连接，做车道预期判断，只取符合条件的车道
+                    lane = demo_location.pLaneObject.castToLaneConnector()
+                    if lane.fromLane().id() == target_lane_id:
+                        location = demo_location
+                        break
+
+            # 强制移动av/mv车辆
+            pIVehicle.vehicleDriving().move(location.pLaneObject, location.distToStart)
+    
+    def _updateShadowEgo(self, simuiface: SimuInterface, netiface: NetInterface):
+        if self.ego_id:
+            ego_vehicle = simuiface.getVehicle(self.ego_id)
+            if self._isEgoExist(ego_vehicle):
+                self._moveEgo(ego_vehicle)
+            else:
+                cur_ego_info = {
+                    "x": self.ego_info.x,
+                    "y": self.ego_info.y,
+                    "v": self.ego_info.v,
+                    "type": 1,
+                    "name": f"{self.EgoName}_{time.time()}"
+                }
+                self._createVehicle(simuiface, netiface, cur_ego_info)
+
     def afterOneStep(self):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         netiface = iface.netInterface()
         self.mainStep(simuiface, netiface)
+        self._checkOutSideMap(netiface)
+        self._updateShadowEgo(simuiface, netiface)
                       
     def afterStop(self):
         self.recorder.output(self.scenario_info.output_path)
