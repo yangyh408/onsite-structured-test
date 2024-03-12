@@ -2,13 +2,13 @@ from typing import Dict, Union
 import math
 class ObjectStatus():
     def __init__(self, **kwargs):
-        self.x = -1
-        self.y = -1
-        self.v = -1
+        self.x = 0
+        self.y = 0
+        self.v = 0
         self.a = 0
-        self.yaw = -1
-        self.width = -1
-        self.length = -1
+        self.yaw = 0
+        self.width = 0
+        self.length = 0
         self.update(**kwargs)
     
     def __str__(self):
@@ -50,8 +50,8 @@ class Observation():
         for category, objects in self.object_info.items():
             if objects:
                 result += f"  + \"{category}\":\n"
-                for obj_id, obj_status in objects.items():
-                    result += f"      \"{obj_id}\" - {str(obj_status)}\n"
+                for obj_name, obj_status in objects.items():
+                    result += f"      \"{obj_name}\" - {str(obj_status)}\n"
         result += f"- light_info: {self.light_info}\n"
         result += f"- test_info: {self.test_info}\n"
         return result
@@ -72,12 +72,12 @@ class Observation():
             'pedestrian': {},
         }
 
-    def update_object_info(self, category: str, obj_id: str, **kwargs):
+    def update_object_info(self, category: str, obj_name: str, **kwargs):
         if category in self.object_info.keys():
-            obj_id = str(obj_id)
-            if obj_id not in self.object_info[category].keys():
-                self.object_info[category][obj_id] = ObjectStatus()
-            self.object_info[category][obj_id].update(**kwargs)
+            obj_name = str(obj_name)
+            if obj_name not in self.object_info[category].keys():
+                self.object_info[category][obj_name] = ObjectStatus()
+            self.object_info[category][obj_name].update(**kwargs)
 
 if __name__ == "__main__":
     observation = Observation()

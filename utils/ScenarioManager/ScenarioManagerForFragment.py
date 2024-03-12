@@ -69,7 +69,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
             type = self.scenario_type,
             source_file = {
                 "xodr": self._find_file_with_suffix(scene_dir, '.xodr'), 
-                "xosc": self._find_file_with_suffix(scene_dir, '.xodr'),
+                "xosc": self._find_file_with_suffix(scene_dir, '.xosc'),
                 "json": "", 
                 "tess": self._find_file_with_suffix(scene_dir, '.tess')
                 },

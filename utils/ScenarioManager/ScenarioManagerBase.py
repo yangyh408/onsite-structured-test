@@ -4,7 +4,6 @@ from .ScenarioInfo import ScenarioInfo
 class ScenarioManagerBase():
     def __init__(self, config: dict):
         self.skip_exist = config.get('skipExist', False)
-        self.print_info = False
         self.record = {}
 
         self.scenario_type = ""
@@ -14,8 +13,9 @@ class ScenarioManagerBase():
         self.output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../outputs'))
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
+        self.tot_scene_num = 0
  
-    def next(self):
+    def next(self) -> bool:
         self.cur_scene_num += 1
         if self.cur_scene_num >= self.tot_scene_num:
             return False
