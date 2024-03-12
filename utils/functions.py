@@ -128,8 +128,8 @@ def check_action(dt, prev_v, prev_action, new_action):
     """
     ACC_LIMIT = 9.8         # m/s^2
     JERK_LIMIT = 49.0       # m/s^3
-    ROT_LIMIT = 0.7         # rad
-    ROT_RATE_LIMIT = 1.4    # rad/s
+    ROT_LIMIT = 0.699       # rad
+    ROT_RATE_LIMIT = 1.397  # rad/s
 
     checked_acc, checked_rot = new_action
 
