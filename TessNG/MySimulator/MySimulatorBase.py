@@ -56,7 +56,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         # 场景解析锁
         self.scenarioLock = 0
         # 主车控制量
-        self.action = [0, 0]
+        self.action = [float('nan'), float('nan')]
         # 记录主车信息
         self.ego_id = None
         self.ego_info = None
@@ -172,16 +172,21 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
             else:
                 self.observation = self._tessngServerMsg(simuiface, simuTime)
                 if self.observation.test_info['end'] == -1:
-                        self.recorder.record(self.observation)
-                        new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
-                        self.action = check_action(self.dt, self.observation.ego_info.v, self.action, new_action)
-                        updateEgoPos(self.action, self.dt, self.ego_info)
+                        self.recorder.record(self.action, self.observation)
+                        self.action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
+                        ego_action = check_action(
+                            dt = self.dt, 
+                            prev_v = self.observation.ego_info.v,
+                            prev_action = [self.observation.ego_info.a, self.observation.ego_info.rot],
+                            new_action = self.action
+                        )
+                        updateEgoPos(ego_action, self.dt, self.ego_info)
                         paintPos["pos"] = self.ego_info.__dict__
                     # else:
                     #     print("===================Ego not found.===================")
                 else:
                     self.finishTest = True
-                    self.recorder.record(self.observation)
+                    self.recorder.record(self.action, self.observation)
                     self.forStopSimu.emit()
 
     def afterStep(self, pIVehicle: IVehicle) -> None:

@@ -8,7 +8,7 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
     controller = ReplayController(mode_config['visualize'])
     recorder = Recorder()
 
-    action = [0, 0]
+    action = [float('nan'), float('nan')]
 
     # 回放测试控制器初始化，并返回主车第一帧信息
     controller.init(scene_info)
@@ -17,13 +17,18 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
 
     while True:
         controller.update_frame()
-        recorder.record(controller.get_observation())
+        recorder.record(action, controller.get_observation())
         if controller.observation.test_info['end'] != -1:
             recorder.output(scene_info.output_path)
             break
-        new_action = planner.act(controller.get_observation())
-        action = check_action(scene_info.task_info['dt'], controller.observation.ego_info.v, action, new_action)
-        controller.update_ego(action)
+        action = planner.act(controller.get_observation())
+        ego_action = check_action(
+            dt = scene_info.task_info['dt'], 
+            prev_v = controller.observation.ego_info.v, 
+            prev_action = [controller.observation.ego_info.a, controller.observation.ego_info.rot], 
+            new_action = action
+        )
+        controller.update_ego(ego_action)
 
 if __name__ == '__main__':
     run('serial', {'tasks': ['Cyz_TJST_1.json', 'Cyz_TJST_2.json']})
