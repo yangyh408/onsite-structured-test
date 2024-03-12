@@ -26,7 +26,6 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
 
         self.task_dir = os.path.abspath(scenario_dir)
         tasks = config.get('tasks', [])
-        self.dt = config.get('dt', 0.05)
         self.tasks_without_tess = []    # 用于记录没有tess文件的任务
         if tasks:
             for scene_name in tasks:
@@ -61,7 +60,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
 
     def _struct_scene_info(self):
         scene_dir = os.path.join(self.task_dir, self.tasks[self.cur_scene_num])
-        goal, vehicles = self._parse_openscenario(self._find_file_with_suffix(scene_dir, '.xosc'))
+        goal, vehicles, dt = self._parse_openscenario(self._find_file_with_suffix(scene_dir, '.xosc'))
         output_name = f"{self.scenario_type}_{self.cur_scene_num}_{self.tasks[self.cur_scene_num]}_result.csv"
         return ScenarioInfo(
             num = self.cur_scene_num,
@@ -78,7 +77,7 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
                 "startPos": [vehicles[0]['x'], vehicles[0]['y']], 
                 "targetPos": goal, 
                 "waypoints": [], 
-                "dt": self.dt,
+                "dt": dt,
             },
             additional_info = {
                 'vehicle_init_status': vehicles,
@@ -135,11 +134,12 @@ class ScenarioManagerForFragment(ScenarioManagerBase):
                 t_1 = float(acts[1].getAttribute('time'))
                 x_1 = float(acts[1].getElementsByTagName('WorldPosition')[0].getAttribute('x'))  # 记录横向位置
                 y_1 = float(acts[1].getElementsByTagName('WorldPosition')[0].getAttribute('y'))  # 记录纵向位置
-                v = np.sqrt((x_1-x)**2+(y_1-y)**2)/(t_1-t)
+                dt = t_1 - t
+                v = np.sqrt((x_1 - x) ** 2 + (y_1 - y) ** 2) / dt
             else:
                 raise RuntimeError("Cannot catch correct vehicle speed!")
             self._improve_info(vehicles[id], t, x, y, v, yaw)
-        return goal, vehicles
+        return goal, vehicles, round(dt,3)
     
     def _improve_info(self, vehicle_info, t, x, y, v, yaw):
         vehicle_info['t'] = round(t, 3)

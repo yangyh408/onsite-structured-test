@@ -1,4 +1,3 @@
-import numpy as np
 import copy
 
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
@@ -50,30 +49,6 @@ class ReplayController():
 
     def _update_light_info_to_t(self, t: str, observation: Observation) -> None:
         observation.update_light_info(self.control_info.light_info.get(t, ""))
-
-    def _update_ego_and_t(self, action: list, observation: Observation) -> None:
-        # 首先分别取出加速度和方向盘转角
-        acc, rot = action
-        # 取出步长
-        dt = self.scenario_info.task_info['dt']
-        # 小数点位数，避免浮点数精度问题
-        decimal_places = len(str(dt).split('.')[-1])
-        # 首先修改时间，新时间=t+dt
-        observation.update_test_info(t=round(float(observation.test_info['t'] + dt), decimal_places))
-        
-        # 修改本车的位置，方式是前向欧拉更新，1.根据旧速度更新位置；2.然后更新速度。
-        # 速度和位置的更新基于自行车模型。
-        # 取出本车的各类信息
-        x, y, v, yaw, width, length = [float(observation.ego_info.__getattribute__(key)) for key in ['x', 'y', 'v', 'yaw', 'width', 'length']]
-
-        observation.update_ego_info(
-            x = x + v * np.cos(yaw) * dt,
-            y = y + v * np.sin(yaw) * dt,
-            yaw = yaw + v / length * 1.7 * np.tan(rot) * dt,
-            v = max(0, v + acc * dt),
-            a = acc,
-            rot = rot,
-        )
 
     def _update_other_objects_to_t(self, t: str, observation: Observation) -> None:
         observation.erase_object_info()

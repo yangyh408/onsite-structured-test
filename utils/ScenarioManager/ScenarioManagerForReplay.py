@@ -49,7 +49,7 @@ class ScenarioManagerForReplay(ScenarioManagerBase):
         ego_v, ego_x, ego_y, ego_head = [float(i.split('=')[1]) for i in ego_init.split(',')]
 
         goal_init = ego_node.childNodes[5].data
-        goal = [float(i) for i in re.findall('-*\d+\.\d+', goal_init)]
+        goal = [round(float(i), 3) for i in re.findall('-*\d+\.\d+', goal_init)]
 
         points = opens.getElementsByTagName('Act')[0].getElementsByTagName('Vertex')
         return {

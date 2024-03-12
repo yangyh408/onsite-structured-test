@@ -7,8 +7,6 @@ class MySimulatorSerial(MySimulatorBase):
     def __init__(self, config: dict, planner: object, scene_info: ScenarioInfo):
         MySimulatorBase.__init__(self)
 
-        # 测试类型
-        self.scenario_type = 'SERIAL'
         # 测试间隔
         self.dt = config.get('dt', 0.05)
         # 最大测试时长

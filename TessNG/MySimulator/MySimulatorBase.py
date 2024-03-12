@@ -23,9 +23,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         QObject.__init__(self)
         PyCustomerSimulator.__init__(self)
 
-        # 测试类型
-        self.scenario_type = None
-        # 测试间隔
+        # 测试步长
         self.dt = None
         # 最大测试时长
         self.maxTestTime = None

@@ -9,10 +9,6 @@ class MySimulatorFragment(MySimulatorBase):
     def __init__(self, config: dict, planner: object, scene_info: ScenarioInfo):
         MySimulatorBase.__init__(self)
 
-        # 测试类型
-        self.scenario_type = 'FRAGMENT'
-        # 测试间隔
-        self.dt = config.get('dt', 0.05)
         # 最大测试时长
         self.maxTestTime = config.get('maxTestTime', 30)
         # 实例化规控器并初始化
@@ -20,6 +16,8 @@ class MySimulatorFragment(MySimulatorBase):
         self.planner.init(scene_info.format())
         # 加载场景信息
         self.scenario_info = scene_info
+        # 测试间隔
+        self.dt = scene_info.task_info['dt']
         # 仿真预热时间
         self.preheatingTime = 0
         # 背景车探测范围
