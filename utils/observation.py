@@ -19,7 +19,7 @@ class ObjectStatus():
             if hasattr(self, key):
                 if key == 'yaw':
                     value = value % (2 * math.pi)
-                setattr(self, key, round(value, 2))
+                setattr(self, key, round(value, 3))
 
 class EgoStatus(ObjectStatus):
     def __init__(self, **kwargs):

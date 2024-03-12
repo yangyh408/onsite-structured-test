@@ -7,23 +7,26 @@ from utils.observation import Observation
 
 class DataRecord:
     def __init__(self):
-        self.data = {}
         self.control_data  = pd.DataFrame(columns=['acc', 'rot'])
+        self.ego_data  = pd.DataFrame(columns=['x', 'y', 'v', 'a', 'yaw', 'rot', 'width', 'length'])
+        self.object_data = {}
         self.object_column = ['x', 'y', 'v', 'a', 'yaw', 'width', 'length']
-        self._add_vehicle_frame('ego')
+        self.end_data = pd.DataFrame(columns=['end'])
 
-    def add_data(self, observation: Observation):
+    def add_data(self, action: list, observation: Observation):
         """将输入的观察值进行存储
         """
         # 首先将已经建立了对应DataFrame的车辆名提取出来
-        stored_vehicles = self.data.keys()
+        stored_vehicles = self.object_data.keys()
         # 提取observation对应的时刻
         t = observation.test_info['t']
         
         # 记录控制量
-        self.control_data.loc[t] = [observation.ego_info.a, observation.ego_info.rot]
-
-        self.extend_vehicle_info(t, 'ego', observation.ego_info.__dict__)
+        self.control_data.loc[t] = [round(action[0], 3), round(action[1], 3)]
+        # 记录ego车辆信息
+        self.ego_data.loc[t] = observation.ego_info.__dict__
+        # 记录结束状态
+        self.end_data.loc[t] = observation.test_info['end']
         
         # 遍历observation中的所有车辆
         for obj_type in observation.object_info:
@@ -42,28 +45,23 @@ class DataRecord:
             columns=self.object_column,
             index=[t],
         )
-        sub_frame.columns = list(self.data[vehicle_name].columns)
-        self.data[vehicle_name] = pd.concat([self.data[vehicle_name], sub_frame])
+        sub_frame.columns = list(self.object_data[vehicle_name].columns)
+        self.object_data[vehicle_name] = pd.concat([self.object_data[vehicle_name], sub_frame])
 
     def merge_frame(self) -> pd.DataFrame:
         """将存储的所有交通参与者的DataFrame，按照时间进行合并，返回完整的DataFrame
 
         """
+        self.ego_data.columns = [f"{i}_ego" for i in self.ego_data.columns]
         # 取出每辆车的DataFrame，组成列表
-        vehicle_dataframe_group = [self.data[vehi_name]
-                                   for vehi_name in list(self.data.keys())]
-        if vehicle_dataframe_group:
-            # 返回合并后的DataFrame
-            vehicle_dataframe_group.insert(0, self.control_data)
-            return reduce(lambda x, y: pd.merge(x, y, how="outer", left_index=True, right_index=True),
-                        vehicle_dataframe_group)
-        else:
-            return pd.DataFrame()
+        object_dataframe_group = [self.object_data[vehi_name] for vehi_name in list(self.object_data.keys())]
+    
+        return reduce(lambda x, y: pd.merge(x, y, how="outer", left_index=True, right_index=True), [self.control_data, self.ego_data, *object_dataframe_group, self.end_data])
 
     def _add_vehicle_frame(self, vehicle_name: str):
         """为某一交通参与者创造对应的小DataFrame
         """
-        self.data[vehicle_name] = pd.DataFrame(
+        self.object_data[vehicle_name] = pd.DataFrame(
             None,
             columns=[i + "_" + vehicle_name for i in self.object_column]
         )
@@ -75,9 +73,9 @@ class Recorder:
         self.end_status = -1
         self.data = DataRecord()
 
-    def record(self, observation: Observation):
+    def record(self, action: list, observation: Observation):
         if self.end_status == -1:
-            self.data.add_data(observation)
+            self.data.add_data(action, observation)
             self.end_status = observation.test_info['end']
     
     def output(self, output_path):
@@ -85,7 +83,4 @@ class Recorder:
             os.makedirs(os.path.dirname(output_path))
         data_output = self.data.merge_frame()
         if not data_output.empty:
-            # 增加结束状态一列
-            data_output.loc[:, 'end'] = -1
-            data_output.iloc[-1, -1] = self.end_status
             data_output.to_csv(output_path)
