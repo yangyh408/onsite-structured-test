@@ -499,9 +499,9 @@ class Visualizer():
             x=frame_series['x_ego'],
             y=frame_series['y_ego'],
             v=frame_series['v_ego'],
-            a=frame_series['acc'],
+            a=frame_series['a_ego'],
             yaw=frame_series['yaw_ego'],
-            rot=frame_series['rot'],
+            rot=frame_series['rot_ego'],
             length=frame_series['length_ego'],
             width=frame_series['width_ego']
         )
@@ -516,8 +516,8 @@ class Visualizer():
         test_info = {
             't': frame_series[0],
             'end': self._format_number(frame_series['end'], 0),
-            'acc': new_observation.ego_info.a,
-            'rot': new_observation.ego_info.rot,
+            'acc': f"{new_observation.ego_info.a} ({round(frame_series['acc'], 3)})",
+            'rot': f"{new_observation.ego_info.rot} ({round(frame_series['rot'], 3)})",
             'ego_x': new_observation.ego_info.x,
             'ego_y': new_observation.ego_info.y,
             'ego_v': new_observation.ego_info.v,
