@@ -174,7 +174,7 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
                 if self.observation.test_info['end'] == -1:
                         self.recorder.record(self.observation)
                         new_action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
-                        self.action = check_action(self.dt, self.action, new_action)
+                        self.action = check_action(self.dt, self.observation.ego_info.v, self.action, new_action)
                         updateEgoPos(self.action, self.dt, self.ego_info)
                         paintPos["pos"] = self.ego_info.__dict__
                     # else:

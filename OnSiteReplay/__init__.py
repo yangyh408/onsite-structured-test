@@ -22,7 +22,7 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
             recorder.output(scene_info.output_path)
             break
         new_action = planner.act(controller.get_observation())
-        action = check_action(scene_info.task_info['dt'], action, new_action)
+        action = check_action(scene_info.task_info['dt'], controller.observation.ego_info.v, action, new_action)
         controller.update_ego(action)
 
 if __name__ == '__main__':

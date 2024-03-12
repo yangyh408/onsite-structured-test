@@ -116,10 +116,11 @@ def updateEgoPos(action: list, dt: float, ego_info: EgoStatus) -> None:
         rot = rot,
     )
 
-def check_action(dt, prev_action, new_action):
+def check_action(dt, prev_v, prev_action, new_action):
     """检验选手返回的action是否满足动力学约束
     Args:
         dt: float, 时间间隔
+        prev_v: float, 上一帧的速度
         prev_action: list, 上一帧的action
         new_action: list, 选手返回的action
     Returns:
@@ -133,16 +134,21 @@ def check_action(dt, prev_action, new_action):
     checked_acc, checked_rot = new_action
 
     if not np.isnan(prev_action[0]):
-        # 检验加速度
-        jerk = (new_action[0] - prev_action[0]) / dt
-        if abs(jerk) > JERK_LIMIT:
-            jerk = np.clip(jerk, -JERK_LIMIT, JERK_LIMIT)
-            checked_acc = prev_action[0] + jerk * dt
+        cur_v = prev_v + checked_acc * dt
+        if cur_v < 0:
+            # 如果时减速到停车的情况
+            checked_acc = -prev_v / dt
+        else:
+            jerk = (new_action[0] - prev_action[0]) / dt
+            if abs(jerk) > JERK_LIMIT:
+                # 根据执行器动力学修正加速度
+                jerk = np.clip(jerk, -JERK_LIMIT, JERK_LIMIT)
+                checked_acc = prev_action[0] + jerk * dt
 
     if not np.isnan(prev_action[1]):
-        # 检验前轮转角
         rot_rate = (new_action[1] - prev_action[1]) / dt
         if abs(rot_rate) > ROT_RATE_LIMIT:
+            # 根据执行器动力学修正前轮转角
             rot_rate = np.clip(rot_rate, -ROT_RATE_LIMIT, ROT_RATE_LIMIT)
             checked_rot = prev_action[1] + rot_rate * dt
 
