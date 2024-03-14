@@ -3,19 +3,16 @@
     <!-- Please provide path to your logo here -->
     <img src="assets/ONSITE-blue-logo-cn_name.svg" alt="OnSite" width="800">
 </a>
+    
 # OnSite结构化测试工具
+    
 </div>
+
 <div align="center">
-  <a href="https://onsite.com.cn/">
-    <img src="https://img.shields.io/badge/OnSite-2.0-blue">
-  </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://tops.tongji.edu.cn/">
-    <img src="https://img.shields.io/badge/TCU-TOPS-purple">
-  </a>
+<a href="https://onsite.com.cn/"><img src="https://img.shields.io/badge/OnSite-2.0-blue"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://tops.tongji.edu.cn/"><img src="https://img.shields.io/badge/TCU-TOPS-purple"></a>
 </div>
-
-
 
 ## 使用说明
 
@@ -418,6 +415,4 @@ onsite_structured_test
 
 ## API Reference
 
-关于本工具中涉及到的`Observation`，`ScenarioManager`，`PlannerBase`等主要类的接口说明，参见：
-
-[API Reference](./docs/API_Reference.md)
+关于本工具中涉及到的`Observation`，`ScenarioManager`，`PlannerBase`等主要类的接口说明，参见[API Reference](./docs/API_Reference.md)
