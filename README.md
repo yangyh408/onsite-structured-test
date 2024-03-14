@@ -124,13 +124,13 @@
 1.   编写`__init__(self)`构造函数
      +   功能：构造函数，用于初始化自定义规控器模块的相关属性设置
      +   调用时间：仅在测试开始前被调用一次
-2.   编写`init(self, scenario_info)`初始化函数***（必须）*** 
+2.   编写`init(self, scenario_info)`初始化函数 ***（必须）*** 
      +   功能：初始化函数，通过`scenario_info`参数传入当前测试任务信息，可用于进行地图解析等工作
-     +   传入参数：类型为`dict`，表示测试任务场景相关信息，其值为[`ScenarioInfo::format()`](./docs/API_Reference.md#ScenarioInfo objects)方法的返回值
+     +   传入参数：类型为`dict`，表示测试任务场景相关信息，其值为[`ScenarioInfo::format()`](./docs/API_Reference.md#ScenarioInfoobjects)方法的返回值
      +   调用时间：在每个测试任务加载后调用，调用次数与测试任务数量一致
-3.   编写`act(self, observation)`响应函数***（必须）*** 
+3.   编写`act(self, observation)`响应函数 ***（必须）*** 
      +   功能：响应函数，读入当前时刻的仿真环境状态信息，进行相关规划控制运算并返回主车的控制量
-     +   传入参数：类型为[`Observation`](./docs/API_Reference.md#Observation objects)，表示仿真中背景要素的当前状态信息
+     +   传入参数：类型为[`Observation`](./docs/API_Reference.md#Observationobjects)，表示仿真中背景要素的当前状态信息
      +   返回值：类型为`List[float]`，以列表的形式返回主车在当前背景交通流环境下的**纵向加速度和前轮转角**
      +   调用时间：在测试任务的每一帧会调用一次，调用次数与测试任务的帧数一致
 
