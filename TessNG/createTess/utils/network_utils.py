@@ -202,6 +202,8 @@ class Network:
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             print("失败了")
+            print(e)
+            print("7"*100)
             pass
             # send_signal(context, 0, error=True)
             # print(f"convert_network error: {e}")

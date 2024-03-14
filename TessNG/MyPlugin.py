@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
-from TESS_API_EXAMPLE import *
-from utils.config import *
-
-from MyNet import *
-if MODE == 'fragment':
-    from TessNG.MySimulatorFragment import *
-elif MODE == 'serial':
-    from TessNG.MySimulatorSerial import MySimulator
-elif MODE == 'create':
-    from TessNG.MySimulatorCreate import *
+from .TESS_API_EXAMPLE import *
+from .MyNet import MyNet
+from .MySimulator import select_simulator
 
 # 用户插件，继承自TessPlugin
 class MyPlugin(TessPlugin):
-    def __init__(self):
+    def __init__(self, mode: str, config: dict, planner: object, scene_info: dict=None):
         super(MyPlugin, self).__init__()
         self.mNetInf = None
         self.mSimuInf = None
+        self.mode = mode
+        self.config = config
+        self.planner = planner
+        self.scene_info = scene_info
 
     def initGui(self):
         # 在TESS NG主界面上增加 QDockWidget对象
@@ -54,7 +51,7 @@ class MyPlugin(TessPlugin):
     def init(self):
         self.initGui()
         self.mNetInf = MyNet()
-        self.mSimuInf = MySimulator()
+        self.mSimuInf = select_simulator(self.mode, self.config, self.planner, self.scene_info)
         self.mSimuInf.signalRunInfo.connect(self.examleWindow.showRunInfo)
         iface = tngIFace()
         win = iface.guiInterface().mainWindow()
