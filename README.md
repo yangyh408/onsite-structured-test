@@ -12,6 +12,8 @@
 <a href="https://onsite.com.cn/"><img src="https://img.shields.io/badge/OnSite-2.0-blue"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://tops.tongji.edu.cn/"><img src="https://img.shields.io/badge/TCU-TOPS-purple"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-BSD%203-yellow"></a>
 </div>
 
 ## 使用说明
@@ -432,3 +434,5 @@ onsite_structured_test
 ## API Reference
 
 关于本工具中涉及到的`Observation`，`ScenarioManager`，`PlannerBase`等主要类的接口说明，参见[API Reference](./docs/API_Reference.md)
+
+
