@@ -1,26 +1,36 @@
 # Change Log
 
-## [Ver 3.1]
+## [Ver 3.1] - 2024.03.15
 
 ### Refact
 
 + 重构输出`Recorder`模块，在输出文件中会包含选手回传的两个控制量以及经过执行器动力学修正后实际作用在主车上的控制量
 
-
 ### Fix
 
 + 更新执行器动力学约束模块，当车速减为0时重新计算加速度
++ 修复了Lattice规控器读取新版接口报错的问题
+
+### Add
+
++ 添加`docs`文件夹用于存放各类文档
++ 添加三种测试模式的详细说明文档
 
 ### Update
 
 + 更新执行器动力学约束参数`ROT_LIMIT`和`ROT_RATE_LIMIT`
 + 将`ScenarioManagerForFragment`中场景步长的获取方式由配置文件改为通过OpenSCENARIO文件获取
 + 在可视化回放中添加了执行器动力学约束修正前后的主车控制量显示
++ 将资源文件夹由`src`改为`assets`
++ 更新`requirements.txt`
++ 更新`planner/plannerBase`的注释文档
++ 更新`Dockerfile`中的build指令
 
 ### Doc
 
-+ 更新`planner/plannerBase`的注释文档
 + 在`OnSiteReplay`中添加代码注释
++ 在`MySimulatorBase`中添加代码注释
+
 
 
 ## [Ver 3.0] - 2024.03.09

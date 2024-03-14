@@ -12,6 +12,8 @@
 <a href="https://onsite.com.cn/"><img src="https://img.shields.io/badge/OnSite-2.0-blue"></a>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://tops.tongji.edu.cn/"><img src="https://img.shields.io/badge/TCU-TOPS-purple"></a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-BSD%203-yellow"></a>
 </div>
 
 ## 使用说明
@@ -44,26 +46,36 @@
 
 + 导入待测场景文件
 
-  > 关于场景文件说明详见各测试模式的*场景文件说明*章节
+  - 场景根文件夹路径为`scenario/`
 
-  - 场景文件夹路径为`scenario/replay/`
-  - 各测试任务以子文件夹的形式单独组织，子文件夹名称为场景名，文件夹中包含测试任务相关的OpenDrive、OpenScenario文件
+  - 工具中提供了各测试模式的基础测试场景，用户可以直接使用
+
+      >   关于场景文件说明详见各测试模式的 *场景文件说明* 章节
 
 + 配置测试任务
 
-  > 关于测试任务配置详见各测试模式的*测试任务配置*章节
-
   + 配置文件路径为`config/tasks.yaml`
 
-  + 样例配置文件：
+  + 初次使用，推荐用户使用如下样例配置文件：
 
-    >   回放测试的相关配置需要写在`REPLAY`字段下
+    >   关于测试任务配置详见各测试模式的 *测试任务配置* 章节
 
     ```yaml
+    FRAGMENT:
+      tasks:
+      maxTestTime: 25
+      skipExist: True
+    
+    SERIAL:
+      tasks:
+      dt: 0.1
+      maxTestTime: 200
+      skipExist: True
+    
     REPLAY:
       tasks:
       visualize: True
-      skipExist: False
+      skipExist: True
     ```
 
 #### 1.3 选择待测试的规控算法
@@ -333,7 +345,12 @@ IDM跟驰算法可以实现沿直线行驶时的自动跟车，但由于IDM仅�
   local_root_dir="/home/yangyh408/Desktop/onsite_structured_test"
   
   # 分别挂载本地场景文件、配置文件、TessNG激活证书、输出文件这四个文件路径并以后台运行容器
-  sudo docker run -d -v $local_root_dir/scenario:/onsite_structured_test/scenario -v $local_root_dir/config:/onsite_structured_test/config -v $local_root_dir/TessNG/WorkSpace/Cert:/onsite_structured_test/TessNG/WorkSpace/Cert -v $local_root_dir/outputs:/onsite_structured_test/outputs <hub-user>/<repo-name>:<tag>
+  sudo docker run -d \
+  -v $local_root_dir/scenario:/onsite_structured_test/scenario \
+  -v $local_root_dir/config:/onsite_structured_test/config \
+  -v $local_root_dir/TessNG/WorkSpace/Cert:/onsite_structured_test/TessNG/WorkSpace/Cert \
+  -v $local_root_dir/outputs:/onsite_structured_test/outputs \
+  <hub-user>/<repo-name>:<tag>
   ```
   
 + **上传至dockerHub**
@@ -413,15 +430,15 @@ onsite_structured_test
 
 结构化测试工具包含了回放测试、片段式双向交互测试、无限里程双向交互测试三种不同的测试模式。
 
-+ **回放测试**【[工具说明](./docs/Replay_Instruction.md) | 相关网页】
++ **回放测试**【[工具说明](./docs/Replay_Instruction.md) | [相关网页](https://onsite.com.cn/#/dist/replayTest)】
 
   回放测试服务应用的设定较为简单，仿真场景真实性较高，背景车辆与主车之间不存在交互行为完全按照既定轨迹行驶，可以测试规控算法在已提取的真实场景下的运行安全
 
-+ **片段式双向交互测试**【[工具说明](./docs/Fragment_Instruction.md) | 相关网页】
++ **片段式双向交互测试**【[工具说明](./docs/Fragment_Instruction.md) | [相关网页](https://onsite.com.cn/#/dist/wayInteractionTest)】
 
   片段式双向交互测试通过接入国产微观仿真软件TessNG，可以提供更具交互性的仿真环境，进而对被测算法进行更为科学、可信的测评
 
-+ **无限里程双向交互测试**【[工具说明](./docs/Serial_Instruction.md) | 相关网页】
++ **无限里程双向交互测试**【[工具说明](./docs/Serial_Instruction.md) | [相关网页](https://onsite.com.cn/#/dist/twoWayInteractionTestTool)】
 
   无限里程双向交互测试可以实现更大空间区域和更长时域范围的“无限里程”连续式仿真测试，进一步提升虚拟仿真测试的难度和覆盖度
 
@@ -432,3 +449,39 @@ onsite_structured_test
 ## API Reference
 
 关于本工具中涉及到的`Observation`，`ScenarioManager`，`PlannerBase`等主要类的接口说明，参见[API Reference](./docs/API_Reference.md)
+
+
+
+
+
+## [CHANGE LOG](./docs/CHANGELOG.md)
+
+### Refact
+
++ 重构输出`Recorder`模块，在输出文件中会包含选手回传的两个控制量以及经过执行器动力学修正后实际作用在主车上的控制量
+
+### Fix
+
++ 更新执行器动力学约束模块，当车速减为0时重新计算加速度
++ 修复了Lattice规控器读取新版接口报错的问题
+
+### Add
+
++ 添加`docs`文件夹用于存放各类文档
++ 添加三种测试模式的详细说明文档
+
+### Update
+
++ 更新执行器动力学约束参数`ROT_LIMIT`和`ROT_RATE_LIMIT`
++ 将`ScenarioManagerForFragment`中场景步长的获取方式由配置文件改为通过OpenSCENARIO文件获取
++ 在可视化回放中添加了执行器动力学约束修正前后的主车控制量显示
++ 将资源文件夹由`src`改为`assets`
++ 更新`requirements.txt`
++ 更新`planner/plannerBase`的注释文档
++ 更新`Dockerfile`中的build指令
+
+### Doc
+
++ 在`OnSiteReplay`中添加代码注释
++ 在`MySimulatorBase`中添加代码注释
+
