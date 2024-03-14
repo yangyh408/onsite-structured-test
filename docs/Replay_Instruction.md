@@ -1,11 +1,5 @@
 ##  回放测试模式说明
 
-
-
-[TOC]
-
-------
-
 ### 1 场景文件说明
 
 #### 1.1 场景文件夹结构
@@ -416,7 +410,7 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
   | 前轮转角 | $|\delta_f| \leq \delta_f^{lim}$ | $40^\circ=0.7rad$     | 大多数汽车的前轮最大转角在30度到40度之间 |
   | 前轮转速 | $|\omega_f|\leq \omega_f^{lim}$  | $80^\circ/s=1.4rad/s$ | 转向电机响应和执行时间限制               |
 
-**当选手输入的前轮转角和加速度等参数超过上述执行器限制时，实际输入按照最大限制条件执行。**车速为状态更新的中间变量在输入侧不做限制但会在动力学校核时进行检查。
+**当选手输入的前轮转角和加速度等参数超过上述执行器限制时，实际输入按照最大限制条件执行。** 车速为状态更新的中间变量在输入侧不做限制但会在动力学校核时进行检查。
 
 #### 3.3 主车更新逻辑
 
@@ -464,8 +458,7 @@ def run(mode_config: dict, planner: object, scene_info: ScenarioInfo) -> None:
 + **输出文件命名**：`{测试模式}_{测试编号}_{场景名称}_result.csv`
 
 + **输出文件内容**：
-
-  ![image-20240312230221763](..\assets\result_file.png)
+  <img src="..\assets\result_file.png" alt="result_file"/>
 
   + 第1列：仿真时间戳
 
