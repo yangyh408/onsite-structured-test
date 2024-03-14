@@ -3,9 +3,9 @@
     <!-- Please provide path to your logo here -->
     <img src="assets/ONSITE-blue-logo-cn_name.svg" alt="OnSite" width="800">
 </a>
-    
+
 # OnSite结构化测试工具
-    
+
 </div>
 
 <div align="center">
@@ -22,10 +22,10 @@
 
 > 注：目前OnSite回放测试工具仅支持**Windows**操作系统及**Ubuntu 20.04**两种系统环境
 
-+ 使用conda建立虚拟环境，需指定版本为 **\*python3.6.6\***
++ 使用conda建立虚拟环境，需指定版本为 **\*python3.6.8\***
 
   ```bash
-   conda create -n onsite python=3.6.6
+   conda create -n onsite python=3.6.8
   ```
 
 + 激活虚拟环境
@@ -99,7 +99,7 @@
 
 #### 1.4 运行测试
 
-> **首次运行TessNG时需要导入激活密钥，点击`导入激活码`后选择`assets/JidaTraffic_key.key`激活，提示激活成功后关闭程序重新运行即可**
+> **首次运行TessNG时需要导入激活密钥，点击`导入激活码`后选择`第二届OnSite自动驾驶算法挑战赛-结构化测试赛道-正式版.key`激活，提示激活成功后关闭程序重新运行即可**
 
 + Windows环境测试指令：
 
@@ -320,7 +320,23 @@ IDM跟驰算法可以实现沿直线行驶时的自动跟车，但由于IDM仅�
 
   + *tag*：镜像标签，标注镜像的版本信息
 
-+ **上传docker镜像**
++ **本地测试docker镜像**
+
+  > *注：仅限在Ubuntu20.04系统环境下开发的用户执行下述指令进行本地docker测试*
+  >
+  > dockerID `<hub-user>/<repo-name>:<tag>`与上述生成的镜像保持一致
+  
+  ```bash
+  #!/bin/bash
+  
+  # 本机结构化测试工具位置（需要运行激活过TessNG）
+  local_root_dir="/home/yangyh408/Desktop/onsite_structured_test"
+  
+  # 分别挂载本地场景文件、配置文件、TessNG激活证书、输出文件这四个文件路径并以后台运行容器
+  sudo docker run -d -v $local_root_dir/scenario:/onsite_structured_test/scenario -v $local_root_dir/config:/onsite_structured_test/config -v $local_root_dir/TessNG/WorkSpace/Cert:/onsite_structured_test/TessNG/WorkSpace/Cert -v $local_root_dir/outputs:/onsite_structured_test/outputs <hub-user>/<repo-name>:<tag>
+  ```
+  
++ **上传至dockerHub**
 
   >   dockerID `<hub-user>/<repo-name>:<tag>`与上述生成的镜像保持一致
 
