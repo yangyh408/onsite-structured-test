@@ -104,11 +104,11 @@
 
 + **Attributes:**
 
-  + **ego_info** : [*EgoStatus*](#EgoStatus objects)
+  + **ego_info** : [*EgoStatus*](#egostatus-objects)
 
     仿真中主车（被测物）的车辆状态
 
-  + **object_info** : *Dict[str, Dict[str, [ObjectStatus](#ObjectStatusobjects)]]*
+  + **object_info** : *Dict[str, Dict[str, [ObjectStatus](#objectstatus-objects)]]*
 
     用于描述仿真环境中的背景要素状态
 
@@ -338,7 +338,7 @@
 
     当前测试的任务场景编号，即其在tasks属性中的位置
 
-  + **cur_scene** : [*ScenarioInfo*](#ScenarioInfoobjects)
+  + **cur_scene** : [*ScenarioInfo*](#scenarioinfo-objects)
 
     当前测试任务场景的相关信息
 
@@ -544,7 +544,7 @@
 
     + `scenario_info` : *dict*
 
-      测试任务场景相关信息，其值为[`ScenarioInfo::format()`](#ScenarioInfoobjects)方法的返回值，关于该字典中键值对的简单描述如下：
+      测试任务场景相关信息，其值为[`ScenarioInfo::format()`](#scenarioinfo-objects)方法的返回值，关于该字典中键值对的简单描述如下：
 
       | Key             | Type   | Value                                                        |
       | --------------- | ------ | ------------------------------------------------------------ |
@@ -565,14 +565,14 @@
 
     *Parameters :*
 
-    + `observation` : [*Observation*](#Observationobjects)
+    + `observation` : [*Observation*](#observation-objects)
 
       仿真中背景要素的当前状态信息，关于该对象的属性简单描述如下：
 
       | Key           | Type                                                         | Value                                                        |
       | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-      | `ego_info`    | [*EgoStatus*](#EgoStatusobjects)                            | 仿真中主车的车辆状态                                         |
-      | `object_info` | *Dict[str, Dict[str, [ObjectStatus](#ObjectStatusobjects)]]* | 仿真环境中的各背景要素状态，包含背景车、非机动车和行人       |
+      | `ego_info`    | [*EgoStatus*](#egostatus-objects)                            | 仿真中主车的车辆状态                                         |
+      | `object_info` | *Dict[str, Dict[str, [ObjectStatus](#objectstatus-objects)]]* | 仿真环境中的各背景要素状态，包含背景车、非机动车和行人       |
       | `light_info`  | *str*                                                        | 仿真环境当前与主车通行相关的信号灯灯色                       |
       | `test_info`   | *dict*                                                       | 仿真环境的状态信息，包括当前时间戳`t`、仿真步长`dt`和仿真运行状态`end` |
     
