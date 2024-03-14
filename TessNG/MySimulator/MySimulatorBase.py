@@ -159,30 +159,37 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
 
     def mainStep(self, simuiface, netiface):
         simuTime = simuiface.simuTimeIntervalWithAcceMutiples()
-        # batchNum = simuiface.batchNumber()
+        # 判断是否到达预热时间
         if simuTime >= self.preheatingTime * 1000 and not self.finishTest:
+            # 判断是否在仿真中添加主车及背景车
             if not self.createCarLock:
                 self._addCar(simuiface, netiface)
                 self.createCarLock = 1
-            
+            # 判断主车是否已经成功进入仿真环境
             if self.ego_info == None:
                 self._createEgoInfo(simuiface, netiface)
             else:
+                # 获取当前时刻仿真环境观测信息
                 self.observation = self._tessngServerMsg(simuiface, simuTime)
+                # 判断仿真是否还在进行中
                 if self.observation.test_info['end'] == -1:
-                        self.recorder.record(self.action, self.observation)
-                        self.action = self.planner.act(self.observation)  # 规划控制模块做出决策，得到本车加速度和方向盘转角。
-                        ego_action = check_action(
-                            dt = self.dt, 
-                            prev_v = self.observation.ego_info.v,
-                            prev_action = [self.observation.ego_info.a, self.observation.ego_info.rot],
-                            new_action = self.action
-                        )
-                        updateEgoPos(ego_action, self.dt, self.ego_info)
-                        paintPos["pos"] = self.ego_info.__dict__
-                    # else:
-                    #     print("===================Ego not found.===================")
+                    # 记录当前测试信息
+                    self.recorder.record(self.action, self.observation)
+                    # 获取规控模块回传的控制信息
+                    self.action = self.planner.act(self.observation)  
+                    # 对规控器回传的控制信息进行执行器动力学约束修正
+                    ego_action = check_action(
+                        dt = self.dt, 
+                        prev_v = self.observation.ego_info.v,
+                        prev_action = [self.observation.ego_info.a, self.observation.ego_info.rot],
+                        new_action = self.action
+                    )
+                    # 根据修正后的控制量更新主车位置
+                    updateEgoPos(ego_action, self.dt, self.ego_info)
+                    # 在TessNG中绘制主车位置
+                    paintPos["pos"] = self.ego_info.__dict__
                 else:
+                    # 如果仿真到达终止条件则停止仿真
                     self.finishTest = True
                     self.recorder.record(self.action, self.observation)
                     self.forStopSimu.emit()
@@ -262,12 +269,17 @@ class MySimulatorBase(QObject, PyCustomerSimulator):
         iface = tessngIFace()
         simuiface = iface.simuInterface()
         netiface = iface.netInterface()
+        # 主要测试流程
         self.mainStep(simuiface, netiface)
+        # 检查测试环境中主车是否驶出路网
         self._checkOutSideMap(netiface)
+        # 更新主车对应TessNG中影子车的状态信息
         self._updateShadowEgo(simuiface, netiface)
                       
     def afterStop(self):
+        # 输出测试结果
         self.recorder.output(self.scenario_info.output_path)
+        # 退出仿真
         kill_process(os.getpid())
 
     def get_observation(self):

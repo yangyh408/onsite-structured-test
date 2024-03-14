@@ -4,7 +4,6 @@ from typing import List
 from utils.observation import Observation
 
 class PlannerBase(ABC):
-    @abstractmethod
     def __init__(self) -> None:
         """ 构造函数，用于初始化自定义规控器模块的相关属性设置
         """

@@ -10,9 +10,11 @@ from .TESS_API_EXAMPLE import *
 from utils.ScenarioManager.ScenarioInfo import ScenarioInfo
 
 def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: ScenarioInfo, auto_run: bool) -> None:
+    # 创建工作目录
     workspace_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'WorkSpace')
     if not os.path.exists(workspace_dir):
         os.makedirs(workspace_dir)
+    # 启动TessNG并传入测试相关参数
     app = QApplication()
     config = {'__workspace': workspace_dir,
               '__simuafterload': auto_run,
@@ -31,6 +33,14 @@ def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: Scena
         sys.exit(app.exec_())
 
 def run(mode: str, mode_config: dict, planner: object=None, scene_info: ScenarioInfo=ScenarioInfo(), auto_run: bool=True) -> None:
+    """启动TessNG进行测试
+    Args:
+        mode (str): 测试模式
+        mode_config (dict): 测试配置
+        planner (object, optional): 规划器对象. Defaults to None.
+        scene_info (ScenarioInfo, optional): 测试场景信息. Defaults to ScenarioInfo().
+        auto_run (bool, optional): 是否自动运行测试. Defaults to True.
+    """
     tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, scene_info, auto_run))
     tessng_p.start()
     tessng_p.join()
