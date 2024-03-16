@@ -5,18 +5,12 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-# from scipy.ndimage.measurements import label
 import scipy.signal
-# import pandas as pd
-# import json
-# from scipy.stats import multivariate_normal
-# import copy
-# import scipy.io as sio
 import scipy.optimize as opt
 from scipy.integrate import quad
 from scipy.interpolate import splrep, splev
-
-# import random
+from planner.plannerBase import PlannerBase
+import pandas as pd
 
 M_PI = 3.141593
 
@@ -43,7 +37,6 @@ LAT_COST_WEIGHT = 1  # 横向约束，包括舒适度和偏移量
 LON_COLLISION_COST_WEIGHT = 1  # 碰撞cost
 DESTINATION_WEIGHT = 1
 
-
 def NormalizeAngle(angle_rad):
     # to normalize an angle to [-pi, pi]
     a = math.fmod(angle_rad + M_PI, 2.0 * M_PI)
@@ -51,10 +44,8 @@ def NormalizeAngle(angle_rad):
         a = a + 2.0 * M_PI
     return a - M_PI
 
-
 def Dist(x1, y1, x2, y2):
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
 
 class PathPoint:
     def __init__(self, pp_list):
@@ -65,7 +56,6 @@ class PathPoint:
         self.rtheta = pp_list[3]
         self.rkappa = pp_list[4]
         self.rdkappa = pp_list[5]
-
 
 class TrajPoint:
     def __init__(self, tp_list):
@@ -137,7 +127,6 @@ class TrajPoint:
         else:
             return False
 
-
 # 障碍物类
 class Obstacle():
     def __init__(self, obstacle_info):
@@ -200,7 +189,6 @@ class Obstacle():
                     self.matched_point = LinearInterpolate(path_point_last, path_point_min, rs_inter)
         return self.matched_point
 
-
 def CartesianToFrenet(path_point, traj_point):
     ''' from Cartesian to Frenet coordinate, to the matched path point
     copy Apollo cartesian_frenet_conversion.cpp'''
@@ -242,7 +230,6 @@ def CartesianToFrenet(path_point, traj_point):
 
     return s_condition, d_condition
 
-
 def FrenetToCartesian(path_point, s_condition, d_condition):
     ''' from Frenet to Cartesian coordinate
     copy Apollo cartesian_frenet_conversion.cpp'''
@@ -277,7 +264,6 @@ def FrenetToCartesian(path_point, s_condition, d_condition):
 
     tp_list = [x, y, v, a, theta, kappa]
     return TrajPoint(tp_list)
-
 
 def CalcRefLine(cts_points):  # 输入参考轨迹的x y 计算rs/rtheta/rkappa/rdkappa 此时是笛卡尔坐标系 rs为已走路程 rtheta为角度
     '''
@@ -320,17 +306,10 @@ def CalcRefLine(cts_points):  # 输入参考轨迹的x y 计算rs/rtheta/rkappa/
         polyorder = window_length - 1
     rkappa = scipy.signal.savgol_filter(rkappa, window_length, polyorder)  # 平滑
     rdkappa = scipy.signal.savgol_filter(rdkappa, window_length, polyorder)
-    # plt.figure(1)
-    # plt.subplot(211)
-    # plt.plot(rkappa)
-    # plt.subplot(212)
-    # plt.plot(rdkappa)
-    # plt.show()
     path_points = []
     for i in range(len(rx)):
         path_points.append(PathPoint([rx[i], ry[i], rs[i], rtheta[i], rkappa[i], rdkappa[i]]))  # 生成笛卡尔坐标系下的参考轨迹点
     return path_points
-
 
 def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     ''' path point interpolated linearly according to rs value
@@ -364,7 +343,6 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     rdkappa_inter = lerp(path_point_0.rdkappa, path_point_1.rdkappa, weight)
     return PathPoint([rx_inter, ry_inter, rs_inter, rtheta_inter, rkappa_inter, rdkappa_inter])
 
-
 def TrajObsFree(xoy_traj, obstacle, delta_t):  ### 输入为路径点 障碍物类 帧长
     dis_sum = 0
     for point in xoy_traj:
@@ -389,7 +367,6 @@ def TrajObsFree(xoy_traj, obstacle, delta_t):  ### 输入为路径点 障碍物�
     # print("满足实际碰撞检测")
     return dis_mean, True
 
-
 # 粗略的碰撞检测(视作圆形)  如果此时不碰撞，就无需按矩形检测。返回的距离作为该点车到障碍物的大致距离（无碰撞时也可能为负）
 def ColliTestRough(point, obs):
     if isinstance(point, PathPoint):
@@ -400,7 +377,6 @@ def ColliTestRough(point, obs):
     max_veh = max(VEH_L, VEH_W)
     max_obs = max(obs.length, obs.width)
     return dis - (max_veh + max_obs) / 2
-
 
 # 碰撞检测 (这部分参考apollo代码)
 def ColliTest(point, obs):
@@ -436,7 +412,6 @@ def ColliTest(point, obs):
             and (abs(shift_x * sin_o - shift_y * cos_o) <=
                  abs(dx1 * sin_o - dy1 * cos_o) + abs(dx2 * sin_o - dy2 * cos_o) + half_w_o))
 
-
 # 对符合碰撞和约束限制的轨迹对进行cost排序，目前只保留了碰撞和横向两个cost ### 取cost min作为opt traj
 def CostSorting(traj_pairs):
     cost_dict = {}
@@ -453,10 +428,8 @@ def CostSorting(traj_pairs):
         cost_dict[
             num] = lat_cost * LAT_COST_WEIGHT + lon_collision_cost * LON_COLLISION_COST_WEIGHT + lon_destination_cost * DESTINATION_WEIGHT
         num += 1
-    # print(cost_dict)
     cost_list_sorted = sorted(cost_dict.items(), key=lambda d: d[1], reverse=False)
     return cost_list_sorted  # [0]表示原编号num [1]表示该traj的损失函数值
-
 
 class PolyTraj:
     def __init__(self, s_cond_init, d_cond_init, total_t):
@@ -538,7 +511,6 @@ class PolyTraj:
                 print("纵向加速度超出约束")
                 return False
             '''
-        # print("满足纵向约束")
         return True
 
     # 横向加速度约束，参考apollo。这里把横向的cost一块算了
@@ -702,14 +674,6 @@ class LocalPlanner:
                     self.status = 'brake'
 
     def __LatticePlanner(self, traj_point, path_points, obstacles, samp_basis):
-        # core algorithm of the lattice planner
-
-        # plt.figure()
-        # plt.plot(rx, ry, 'b')
-        # for obstacle in self.obstacles:
-        #     plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length,
-        #                  obstacle.width, color='r', angle = obstacle.heading*180/M_PI))
-
         global delta_t, v_tgt, sight_range
         colli_free_traj_pairs = []  # PolyTraj object with corresponding trajectory's cost
         for theta in self.theta_samp:  # theta (heading) samping  ### 航向角采样空间
@@ -717,9 +681,7 @@ class LocalPlanner:
             s_cond_init, d_cond_init = CartesianToFrenet(self.traj_point.matched_point,
                                                          self.traj_point)  ### 转化坐标系 s d分别速度方向和垂直于速度方向
             s_cond_init[2], d_cond_init[2] = 0, 0  # [0]为该坐标系下路程 [1]为速度
-            # if  s_cond_init[1] > 1 * v_tgt:
-            # s_cond_init[1] = self.traj_point.v
-            # print("aa", s_cond_init, d_cond_init)
+
             for delta_s in self.dist_samp:  # s_cond_end[0] sampling
                 total_t = delta_s / v_tgt
                 poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)  ##### 报错由于total+t =0
@@ -767,14 +729,6 @@ class LocalPlanner:
                                 tp_v.append(tp.v)
                                 tp_a.append(tp.a)
 
-                            # plt.figure()
-                            # plt.plot(tp_v)
-                            # plt.plot(tp_x, tp_y, 'k')
-                            # plt.plot(self.traj_point.x, self.traj_point.y, 'or')
-                            # plt.axis('scaled')
-                            # plt.xlim(-270,-250)
-                            # plt.ylim(-504,-484)
-
         if colli_free_traj_pairs:  # selecting the best one
             cost_list = CostSorting(colli_free_traj_pairs)  ### 得到一个traj_pairs(规划轨迹)的升序损失函数序列
             cost_min_traj = colli_free_traj_pairs[cost_list[0][0]][0]
@@ -792,13 +746,6 @@ class LocalPlanner:
             return False
 
     def __PathFollower(self, traj_point, path_points, obstacles, samp_basis):  # 无障碍物且在原轨迹上时的循迹,认为从matched_point开始
-        # 匀变速运动，使速度满足在到达预瞄距离时等于v_end，即v_tgt(未到终点)或0(到终点)
-        # plt.figure()
-        # plt.plot(rx, ry, 'b')
-        # plt.plot(self.traj_point.x, self.traj_point.y, 'or')
-        # for obstacle in self.obstacles:
-        #     plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length,
-        #                  obstacle.width, color='r', angle = obstacle.heading*180/M_PI))
         global delta_t
         # print(f'v_end:{self.v_end},traj_point.v:{self.traj_point.v},dist_prvw:{self.dist_prvw},delta_t:{delta_t}')
         acc = ((self.v_end ** 2 - self.traj_point.v ** 2) / (
@@ -837,12 +784,6 @@ class LocalPlanner:
             tp_all.append(traj_point)
             tp_x.append(traj_point.x)
             tp_y.append(traj_point.y)
-
-        # plt.plot(tp_x, tp_y, '.g')
-        # plt.axis('scaled')
-        # plt.xlim(-270,-250)
-        # plt.ylim(-504,-484)
-        # plt.show()
         return tp_all  ### 同样转化回笛卡尔坐标系
 
     def __FollowingPath(self, traj_point, path_points, obstacles, samp_basis):
@@ -895,227 +836,6 @@ sight_range = 20  # 判断有无障碍物的视野距离
 ttcs = [-1, -0.5, 0, 0.5]  ### change this u should also change line 682 605 878 now means acc
 theta_thr = M_PI / 6  # delta theta threshold, deviation from matched path
 
-
-###create curve based on the origion and target
-# class CurvePlaner():
-#     def __init__(self, current_state, target):  # 输入四个控制点的坐标
-#         self.current_state = current_state
-#         self.target = target
-#         self.normalize_param = [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
-#         self.weight = [8.979991E-01, -2.149553E-02, 1.839042E-02]
-#
-#         self.plan_x = self.BezierCurvePlan()
-#         self.curve_points = self.BezierCurveConverter(self.plan_x)
-#         self.x_list = np.array(self.curve_points[0])
-#         self.y_list = np.array(self.curve_points[1])
-#         self.ds_list, self.s_dist_list = self.get_s_dist_list()
-#         self.curvelength = self.s_dist_list[-1]
-#         self.length = self.s_dist_list[-1]
-#
-#     def get_s_dist_list(self):
-#         dx_ls = np.diff(self.x_list)
-#         dy_ls = np.diff(self.y_list)
-#         ds_ls = [math.sqrt(idx ** 2 + idy ** 2) for (idx, idy) in zip(dx_ls, dy_ls)]
-#         s_dist_list = [0]
-#         s_dist_list.extend(np.cumsum(ds_ls))
-#         return np.array(ds_ls), np.array(s_dist_list)
-#
-#     def calc_xy_by_dist(self, dist):
-#         diff = np.abs(self.s_dist_list - dist)
-#         ind = np.argmin(diff)
-#         return [self.x_list[ind], self.y_list[ind], ind]
-#
-#     def BezierCurveConverter(self, x):  # x为三个数的list，最优化求得
-#         P0 = np.array([self.current_state.x, self.current_state.y])
-#         P1 = np.array([x[0], 0.0])
-#         P1 = self.RotateVector(P1, self.current_state.h) + P0
-#         P2 = np.array([x[1], 4.0 / 3.0 * self.current_state.curvature * x[0] ** 2])
-#         P2 = self.RotateVector(P2, self.current_state.h) + P0
-#         P3 = np.array([self.target.x - x[2] * np.cos(self.target.h),
-#                        self.target.y - x[2] * np.sin(self.target.h)])
-#         P4 = np.array([self.target.x, self.target.y])
-#         P = np.array([P0, P1, P2, P3, P4])
-#         fx = 0.0
-#         fy = 0.0
-#         u = np.arange(0, 1, 0.1)  # np.linspace(0, 1, 101, True)
-#         param = [1, 4, 6, 4, 1]
-#         for i in range(5):
-#             fx += param[i] * u ** (i) * (1.0 - u) ** (4.0 - i) * P[i][0]
-#             fy += param[i] * u ** (i) * (1.0 - u) ** (4.0 - i) * P[i][1]
-#         return [list(fx), list(fy)]
-#
-#     def RotateVector(self, position_matrix, theta):
-#         '''
-#         position_matrix is 2d vector
-#         theta is rotation angle
-#         '''
-#         rotation_matrix = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
-#         return np.dot(position_matrix, rotation_matrix)
-#
-#     def ObjectFunction(self, x):
-#         '''
-#         x is the solution of trajectory planner
-#         '''
-#         result1, _ = quad(lambda u: self.FirstOrderDerivative(u, x), 0, 1)
-#         result2, _ = quad(lambda u: self.SecondOrderDerivative(u, x), 0, 1)
-#         result3, _ = quad(lambda u: self.ThirdOrderDerivative(u, x), 0, 1)
-#         result = [result1, result2, result3]
-#         # print("from funtion result1 is ", result[0], "result2 is ", result[1], "result3 is ", result[2])
-#         result = self.NormalizeReward(result, self.normalize_param)
-#         reward = result[0] * self.weight[0] + \
-#                  result[1] * self.weight[1] + \
-#                  result[2] * self.weight[2]
-#         return reward
-#
-#     def BezierCurvePlan(self):
-#         bnds = ((-50, 50), (-50, 50), (-50, 50))
-#         res = opt.minimize(self.ObjectFunction, (5, 5, 5),
-#                            method='SLSQP',
-#                            options={'disp': False, 'ftol': 1e-8},
-#                            bounds=bnds,
-#                            tol=1e-8)
-#         return res.x
-#
-#     # def PlanCurve(self):
-#     #     self.plan_x = self.BezierCurvePlan()
-#     #     self.BezierCurveConverter(self.plan_x)
-#
-#     def NormalizeReward(self, reward, normalize_parameter):
-#         reward[0] = (reward[0] - normalize_parameter[0][0]) / normalize_parameter[0][1]
-#         reward[1] = (reward[1] - normalize_parameter[1][0]) / normalize_parameter[1][1]
-#         reward[2] = (reward[2] - normalize_parameter[2][0]) / normalize_parameter[2][1]
-#         return reward
-#
-#     def FirstOrderDerivative(self, u, x):
-#         result = 0.0
-#         converted_current_state, converted_target = self.TargetConverter()
-#         P0 = np.array([converted_current_state.x, converted_current_state.y])
-#         P1 = np.array([x[0], 0.0])
-#         P2 = np.array([x[1], 4.0 / 3.0 * converted_current_state.curvature * x[0] ** 2.0])
-#         P3 = np.array([converted_target.x - x[2] * np.cos(converted_target.h),
-#                        converted_target.y - x[2] * np.sin(converted_target.h)])
-#         P4 = np.array([converted_target.x, converted_target.y])
-#         dfx = -4.0 * P0[0] * (1.0 - u) ** 3.0 - \
-#               12.0 * P1[0] * u * (1.0 - u) ** 2.0 + \
-#               4.0 * P1[0] * (1.0 - u) ** 3.0 - \
-#               12.0 * P2[0] * u ** 2.0 * (1.0 - u) + \
-#               12.0 * P2[0] * u * (1 - u) ** 2.0 - \
-#               4.0 * P3[0] * u ** 3.0 + \
-#               12.0 * P3[0] * u ** 2.0 * (1 - u) + \
-#               4.0 * P4[0] * u ** 3.0
-#         dfy = -4.0 * P0[0] * (1.0 - u) ** 3.0 - \
-#               12.0 * P1[0] * u * (1.0 - u) ** 2.0 + \
-#               4.0 * P1[0] * (1.0 - u) ** 3.0 - \
-#               12.0 * P2[0] * u ** 2.0 * (1.0 - u) + \
-#               12.0 * P2[0] * u * (1.0 - u) ** 2.0 - \
-#               4.0 * P3[0] * u ** 3.0 + \
-#               12.0 * P3[0] * u ** 2.0 * (1.0 - u) + \
-#               4.0 * P4[0] * u ** 3.0
-#         result += + dfx ** 2.0 + dfy ** 2.0
-#         return result
-#
-#     def SecondOrderDerivative(self, u, x):
-#         result = 0.0
-#         converted_current_state, converted_target = self.TargetConverter()
-#         P0 = np.array([converted_current_state.x, converted_current_state.y])
-#         P1 = np.array([x[0], 0.0])
-#         P2 = np.array([x[1], 4.0 / 3.0 * converted_current_state.curvature * x[0] ** 2.0])
-#         P3 = np.array([converted_target.x - x[2] * np.cos(converted_target.h),
-#                        converted_target.y - x[2] * np.sin(converted_target.h)])
-#         P4 = np.array([converted_target.x, converted_target.y])
-#         ddfx = 12.0 * P0[0] * (u - 1.0) ** 2.0 - \
-#                24.0 * P1[0] * u * (u - 1.0) - \
-#                24.0 * P1[0] * (u - 1.0) ** 2.0 + \
-#                12.0 * P2[0] * u ** 2.0 + \
-#                48.0 * P2[0] * u * (u - 1.0) + \
-#                12.0 * P2[0] * (u - 1.0) ** 2.0 - \
-#                24.0 * P3[0] * u ** 2.0 - \
-#                24.0 * P3[0] * u * (u - 1.0) + \
-#                12.0 * P4[0] * u ** 2.0
-#         ddfy = 12.0 * P0[1] * (u - 1.0) ** 2.0 - \
-#                24.0 * P1[1] * u * (u - 1.0) - \
-#                24.0 * P1[1] * (u - 1.0) ** 2.0 + \
-#                12.0 * P2[1] * u ** 2.0 + \
-#                48.0 * P2[1] * u * (u - 1.0) + \
-#                12.0 * P2[1] * (u - 1) ** 2.0 - \
-#                24.0 * P3[1] * u ** 2.0 - \
-#                24.0 * P3[1] * u * (u - 1.0) + \
-#                12.0 * P4[1] * u ** 2.0
-#         result += ddfx ** 2.0 + ddfy ** 2.0
-#         return result
-#
-#     def ThirdOrderDerivative(self, u, x):
-#         '''
-#         u rangeing from 0 to 1, is the reference parameter of the curve
-#         x is the solution of the trajectory planner
-#         '''
-#         result = 0.0
-#         converted_current_state, converted_target = self.TargetConverter()
-#         P0 = np.array([converted_current_state.x, converted_current_state.y])
-#         P1 = np.array([x[0], 0.0])
-#         P2 = np.array([x[1], 4.0 / 3.0 * converted_current_state.curvature * x[0] ** 2.0])
-#         P3 = np.array([converted_target.x - x[2] * np.cos(converted_target.h),
-#                        converted_target.y - x[2] * np.sin(converted_target.h)])
-#         P4 = np.array([converted_target.x, converted_target.y])
-#         dddfx = 24.0 * P0[0] * (u - 1.0) - \
-#                 72.0 * P1[0] * (u - 1.0) + \
-#                 72.0 * P2[0] * (u - 1.0) - \
-#                 24.0 * P1[0] * u + \
-#                 72.0 * P2[0] * u - \
-#                 72.0 * P3[0] * u + \
-#                 24.0 * P4[0] * u - \
-#                 24.0 * P3[0] * (u - 1.0)
-#         dddfy = 12.0 * P0[1] * (2.0 * u - 2.0) - \
-#                 36.0 * P1[1] * (2.0 * u - 2.0) + \
-#                 36.0 * P2[1] * (2.0 * u - 2.0) - \
-#                 24.0 * P1[1] * u + \
-#                 72.0 * P2[1] * u - \
-#                 72.0 * P3[1] * u + \
-#                 24.0 * P4[1] * u - \
-#                 24.0 * P3[1] * (u - 1.0)
-#         result += dddfx ** 2.0 + dddfy ** 2.0
-#         return result
-#
-#     def TargetConverter(self):
-#         current_state_result = KnotState()
-#         current_state_result.SetValue(self.current_state)
-#         target_result = KnotState()
-#         target_result.SetValue(self.target)
-#
-#         current_state_result.x = 0.0
-#         current_state_result.y = 0.0
-#         current_state_result.h = 0.0
-#
-#         target_result.x -= self.current_state.x
-#         target_result.y -= self.current_state.y
-#         target_result.h -= self.current_state.h
-#         target_position = np.array([target_result.x, target_result.y])
-#         rotated_target_position = self.RotateVector(target_position, -self.current_state.h)
-#         target_result.x = rotated_target_position[0]
-#         target_result.y = rotated_target_position[1]
-#         return current_state_result, target_result
-#
-#     def BezierCurveConverter(self, x):
-#         P0 = np.array([self.current_state.x, self.current_state.y])
-#         P1 = np.array([x[0], 0.0])
-#         P1 = self.RotateVector(P1, self.current_state.h) + P0
-#         P2 = np.array([x[1], 4.0 / 3.0 * self.current_state.curvature * x[0] ** 2])
-#         P2 = self.RotateVector(P2, self.current_state.h) + P0
-#         P3 = np.array([self.target.x - x[2] * np.cos(self.target.h),
-#                        self.target.y - x[2] * np.sin(self.target.h)])
-#         P4 = np.array([self.target.x, self.target.y])
-#         P = np.array([P0, P1, P2, P3, P4])
-#         fx = 0.0
-#         fy = 0.0
-#         u = np.linspace(0, 1, 100, True)
-#         param = [1, 4, 6, 4, 1]
-#         for i in range(5):
-#             fx += param[i] * u ** (i) * (1.0 - u) ** (4.0 - i) * P[i][0]
-#             fy += param[i] * u ** (i) * (1.0 - u) ** (4.0 - i) * P[i][1]
-#
-#         return [list(fx), list(fy)]
-
-
 def detail_xy(xy):  # 将原车道中心线上少量的点加密为0.1m间隔的点
     [direct, add_length] = get_lane_feature(xy)
     dist_interval = 1
@@ -1135,7 +855,6 @@ def detail_xy(xy):  # 将原车道中心线上少量的点加密为0.1m间隔的
             new_add_len.append(temp_length)
             new_direct.append(direct[k])
     return [new_xy, new_direct, new_add_len]
-
 
 def get_lane_feature(xy):
     xy = np.array(xy)
@@ -1157,7 +876,6 @@ def get_lane_feature(xy):
     length.insert(0, 0)
     return direction, length
 
-
 class KnotState:
     def __init__(self):
         self.x = 0.0
@@ -1177,7 +895,6 @@ class KnotState:
         self.x = rotated_postion[0]
         self.y = rotated_postion[1]
         self.h += theta
-
 
 def smooth_cv(cv_init, point_num=1000):
     cv = cv_init
@@ -1205,7 +922,6 @@ def smooth_cv(cv_init, point_num=1000):
     s_accumulated = np.concatenate(([0], s_accumulated), axis=0)
     return new_cv, s_accumulated
 
-
 def RefLine(origion, destination):
     origion_knotstate = KnotState()
     origion_knotstate.x, origion_knotstate.y, origion_knotstate.h = origion
@@ -1220,84 +936,89 @@ def RefLine(origion, destination):
         planned_curve, _ = smooth_cv(np.array([origion, destination]))
         return planned_curve[:, 0], planned_curve[:, 1]
 
-def alg_1(obs, goal_x, goal_y):
-    # 主车和障碍物位置信息
-    ego_info = obs['vehicle_info']['ego']
-    # 初始化主车
-    x_ego, y_ego, v_ego, heading_ego = ego_info['x'], ego_info['y'], ego_info['v'], ego_info['yaw']
+class LATTICE(PlannerBase):
+    def __init__(self):
+        pass
 
-    # print(f'主车当前速度{v_ego}')
-    tp_list = [x_ego, y_ego, v_ego, 0, heading_ego, 0]  # from sensor actually, an example here
-    traj_point = TrajPoint(tp_list)  ### [x, y, v, a, theta, kappa]
+    def init(self, scenario_dict):
+        print("----------------------------LATTICE INIT----------------------------")
+        global origion, destination
+        origion = np.array([scenario_dict['task_info']['startPos'][0], scenario_dict['task_info']['startPos'][1], 0])
+        destination = np.array([scenario_dict['task_info']['targetPos'][0][0], scenario_dict['task_info']['targetPos'][0][1], 0])
 
-    # 路由点路径信息
-    global destination
-    origion = np.array([x_ego, y_ego, 0])
-    destination = np.array([np.mean(goal_x), np.mean(goal_y), 0])
-    # 测试
+    def act(self, observation):
+        control = self.alg(observation.ego_info, observation.object_info)
+        return control
 
-    rx, ry = RefLine(origion, destination)
+    def alg(self,ego, obs):
+        # 主车和障碍物位置信息
+        ego_info = ego
+        # 初始化主车
+        x_ego, y_ego, v_ego, heading_ego = ego_info.x, ego_info.y, ego_info.v, ego_info.yaw
 
-    cts_points = np.array([rx, ry])
-    path_points = CalcRefLine(cts_points)
-    static_obstacles = []
-    for key in obs['vehicle_info']:
-        if key == 'ego':
-            continue
-        obstacles = obs['vehicle_info'][key]
-        static_obstacles.append(Obstacle(
-            [obstacles['x'], obstacles['y'], obstacles['v'], obstacles['length'], obstacles['width'], obstacles['yaw'],
-             'static']))
+        tp_list = [x_ego, y_ego, v_ego, 0, heading_ego, 0]  # from sensor actually, an example here
+        traj_point = TrajPoint(tp_list)  ### [x, y, v, a, theta, kappa]
 
-    for obstacle in static_obstacles:
-        obstacle.MatchPath(path_points)  ### 同样match障碍物与参考轨迹
+        # 测试
+        rx, ry = RefLine(origion, destination)
+        cts_points = np.array([rx, ry])
+        path_points = CalcRefLine(cts_points)
+        static_obstacles = []
+        for key in obs:
+            ego_obstacles = obs[key]
+            for id in ego_obstacles:
+                obstacles = ego_obstacles[id]
 
-    traj_point.MatchPath(path_points)  # matching once is enough 将traj_point(单点)与path_points(序列)中最近的点匹配
-    samp_basis = SampleBasis(traj_point, theta_thr, ttcs)  ### 采样区间(类动作空间)
-    # print(samp_basis.dist_samp)
-    local_planner = LocalPlanner(traj_point, path_points, static_obstacles,
-                                 samp_basis)  ### 规划器 输入为目前位置 参考轨迹点 障碍物位置 采样空间
-    # print(local_planner.status, local_planner.to_stop)
-    traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    # 如果采样较少的情况未找到可行解，考虑扩大采样范围
-    if not traj_points_opt:
-        # print("扩大范围")
-        theta_thr_ = M_PI / 3
-        ttcs_ = [2, 3, 4, 5, 6, 7, 8]
-        # ttcs_ = [-3, -2, -1, 0, 1, 2]
-        samp_basis = SampleBasis(traj_point, theta_thr_, ttcs_)
-        local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+                static_obstacles.append(Obstacle(
+                    [obstacles.x, obstacles.y, obstacles.v, obstacles.length, obstacles.width, obstacles.yaw,
+                     'static']))
+
+        for obstacle in static_obstacles:
+            obstacle.MatchPath(path_points)  ### 同样match障碍物与参考轨迹
+
+        traj_point.MatchPath(path_points)  # matching once is enough 将traj_point(单点)与path_points(序列)中最近的点匹配
+        samp_basis = SampleBasis(traj_point, theta_thr, ttcs)  ### 采样区间(类动作空间)
+        local_planner = LocalPlanner(traj_point, path_points, static_obstacles,
+                                     samp_basis)  ### 规划器 输入为目前位置 参考轨迹点 障碍物位置 采样空间
         traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    ### 扩大范围还不行就准备紧急停车 结果表明这个模块有问题 紧急停车总是不能完全停下
-    if not traj_points_opt:
-        # print("紧急停车")
-        local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
-        local_planner.status = 'brake'
-        traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
-    else:  ### 正常情况下在正常采样空间内如果有opt 就将opt规划出的点作为下一时刻的traj
-        traj_points = []
-        for tp_opt in traj_points_opt:
-            traj_points.append([tp_opt.x, tp_opt.y, tp_opt.v, tp_opt.a, tp_opt.theta, tp_opt.kappa])
-    ### traj这里就是用于画图 位置变化即从当前位置(traj_points_opt[0])到下一时刻位置(traj_points_opt[1])
+        # 如果采样较少的情况未找到可行解，考虑扩大采样范围
+        if not traj_points_opt:
+            # print("扩大范围")
+            theta_thr_ = M_PI / 3
+            ttcs_ = [2, 3, 4, 5, 6, 7, 8]
+            # ttcs_ = [-3, -2, -1, 0, 1, 2]
+            samp_basis = SampleBasis(traj_point, theta_thr_, ttcs_)
+            local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+            traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
+        ### 扩大范围还不行就准备紧急停车 结果表明这个模块有问题 紧急停车总是不能完全停下
+        if not traj_points_opt:
+            # print("紧急停车")
+            local_planner = LocalPlanner(traj_point, path_points, static_obstacles, samp_basis)
+            local_planner.status = 'brake'
+            traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, static_obstacles, samp_basis)
+        else:  ### 正常情况下在正常采样空间内如果有opt 就将opt规划出的点作为下一时刻的traj
+            traj_points = []
+            for tp_opt in traj_points_opt:
+                traj_points.append([tp_opt.x, tp_opt.y, tp_opt.v, tp_opt.a, tp_opt.theta, tp_opt.kappa])
 
-    if v_ego < 2:
-        acc_target = 1
-    else:
+        if v_ego < 2:
+            acc_target = 1
+        else:
+            try:
+                acc_target = traj_points_opt[1].a  # 加速度
+            except:
+                acc_target = 0
         try:
-            acc_target = traj_points_opt[1].a  # 加速度
+            wheel_target = traj_points_opt[1].theta / 180 * 3.14  # 方向盘转角
         except:
-            acc_target = 0
-    try:
-        wheel_target = traj_points_opt[1].theta / 180 * 3.14  # 方向盘转角
-    except:
-        wheel_target = 0
+            wheel_target = 0
 
-    if acc_target < -3:
-        acc_target = -3
-    if acc_target > 3:
-        acc_target = 3
+        if acc_target < -3:
+            acc_target = -3
+        if acc_target > 3:
+            acc_target = 3
 
-    # wheel_target = traj_points_opt[1].theta - heading_ego  # 方向盘的转角是轨迹的航向角的差值
+        # wheel_target = traj_points_opt[1].theta - heading_ego  # 方向盘的转角是轨迹的航向角的差值
 
-    drivecontroll = [acc_target, wheel_target]  # 最终返回控制信息
-    return drivecontroll
+        drivecontrol = [acc_target, wheel_target]  # 最终返回控制信息
+        return drivecontrol

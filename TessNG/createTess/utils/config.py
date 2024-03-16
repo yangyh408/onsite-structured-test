@@ -1,3 +1,4 @@
+# 场景比例尺
 sceneScale = 1
 
 # opendrive —> tess 车道, 不在此映射表中的车道不予显示
@@ -8,18 +9,13 @@ LANE_TYPE_MAPPING = {
     'sidewalk': '人行道',  # 行人道实际无意义
     'stop': '应急车道',
 
-    # 'onRamp': '机动车道',
-    # 'offRamp': '机动车道',
-    # 'entry': '机动车道',
-    # 'exit': '机动车道',
-    # 'connectingRamp': '机动车道',
-    # 'shoulder': '应急车道',
-    # 'border': '',
-    # 'none': '',
-    # 'redtricted': '',
-    # 'parking': '停车带',
-    # 'median': '',
-    # 'curb': '',
+    'onRamp': '机动车道',
+    'offRamp': '机动车道',
+    'entry': '机动车道',
+    'exit': '机动车道',
+    'connectingRamp': '机动车道',
+    'shoulder': '应急车道',
+    'parking': '停车带',
 }
 
 # 当前后几个点的向量夹角小于 default_angle 且点距小于 max_length(除非夹角为0 ) 时，抹除过渡点
@@ -51,15 +47,6 @@ WIDTH_LIMIT = {
     },
 }
 
-# unity 信息提取的类型映射
-UNITY_LANE_MAPPING = {
-    "Driving": ["driving", "stop", "parking", "entry", "exit", "offRamp", "onRamp", "connectingRamp", ],
-    "None": ["none"],
-    "GreenBelt": ["shoulder", "border", "median", "curb"],
-    "SideWalk": ["sidewalk"],
-    "Biking": ["biking", ],
-    "Restricted": ["restricted"],
-    "WhiteLine": [],
-    "YellowLine": [],
-    "Other": ["bidirectional", "special1", "special2", "special3", "roadWorks", "tram", "rail", ]
-}
+# 拓宽连接段时的路段裁剪长度
+SPLIT_LENGTH = 2
+

@@ -1,34 +1,43 @@
-from onsite.observation import Observation
+from abc import ABC, abstractmethod
+from typing import List
 
-class PlannerBase:
+from utils.observation import Observation
+
+class PlannerBase(ABC):
     def __init__(self) -> None:
-        """ 构造函数，在程序初始时实例化Planner模块
+        """ 构造函数，用于初始化自定义规控器模块的相关属性设置
         """
         pass
-
+    
+    @abstractmethod
     def init(self, scenario_info: dict) -> None:
-        """ 初始化函数，在每个场景加载时调用，通过scenario_dic变量向规控器传入场景的起始坐标、终点面域和途径点
+        """ 初始化函数，通过scenario_info参数传入当前测试任务信息，可用于进行地图解析等工作
         
         Arguments:
-            scenario_info {dict} -- 包含了该场景使用的静态路网、起始坐标、终点面域和途径点信息
-                'scenarioName': 场景名称
-                'tess_file_path': 场景对应.tess文件路径
-                'xodr_file_path': 场景对应.xodr文件路径
-                'startPos': 主车起始坐标
-                'targetPos': 主车目标终点面域
-                'waypoints': 起终点间的参考轨迹
+            scenario_info {dict}
+                "num": {int} 测试场景编号
+                "name": {str} 测试场景名称
+                "type": {str} 测试模式，取值为"REPLAY"|"FRAGMENT"|"SERIAL"，分别对应回放测试、片段式双向交互测试和无限里程双向交互测试
+                "output_path": {str} 测试结果输出路径
+                "source_file": {dict} 场景相关源文件路径，包含 xodr, xosc, json, tess四种后缀文件
+                "task_info": {dict} 测试场景任务相关参数，包含主车初始位置  startPos 、目标行驶区域targetPos、途径点waypoints序列和仿真步长dt
         """
         pass
-
-    def act(self, observation: Observation) -> [float, float]:
-        """ 响应函数，读入当前时刻的背景交通流状态信息，返回主车的控制量
+    
+    @abstractmethod
+    def act(self, observation: Observation) -> List[float]:
+        """ 响应函数，读入当前时刻的仿真环境状态信息，进行相关规划控制运算并返回主车的控制量
 
         Arguments:
-            observation {Observation} -- 上一帧背景交通流及仿真状态的记录信息，具体信息参考onsite网站相关介绍（https://onsite.run/#/trackOutput "回放测试"->"用户读取observation数据说明"）
+            observation {Observation} -- 上一帧背景交通流及仿真状态的记录信息，详见<README: # utils.observation>
+                ego_info: {EgoStatus} 仿真中主车（被测物）的车辆状态
+                object_info: {Dict[str, Dict[str, ObjectStatus]]} 用于描述仿真环境中的背景要素状态
+                light_info: {str} 表示仿真环境当前与主车通行相关的信号灯灯色
+                test_info: {dict} 描述当前仿真环境的状态信息
 
         Returns:
-            [acc, rotate] {list} -- 主车下一时刻的控制量
-                acc {float} -- 主车下一时刻的加速度(m/s^2)    
-                rotate {float} -- 主车下一时刻的方向盘转角(rad)    
+            [acc, rotate] {list}
+                acc {float} -- 主车下一时刻的纵向加速度(m/s^2)    
+                rotate {float} -- 主车下一时刻的前轮转角(rad)    
         """
         pass

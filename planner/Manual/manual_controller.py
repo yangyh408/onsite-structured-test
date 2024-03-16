@@ -33,20 +33,14 @@ class ManualController(PlannerBase):
 
         up_or_down, left_or_right = self._pressed_key()
 
-        if up_or_down == 'up' and observation.vehicle_info['ego']['v'] < self.speed_limit:
+        if up_or_down == 'up' and observation.ego_info.v < self.speed_limit:
             acc = 3
-        if up_or_down == 'down' and observation.vehicle_info['ego']['v'] >= 0.2:
+        if up_or_down == 'down' and observation.ego_info.v >= 0.2:
             acc = -3
 
         if left_or_right == 'left':
-            rotate = 10 * np.pi / 180
+            rotate = 30 * np.pi / 180
         elif left_or_right == 'right':
-            rotate = -10 * np.pi / 180
+            rotate = -30 * np.pi / 180
         
-        return acc, rotate
-    
-
-# controller = ManualController()
-# while True:
-#     print(f"Key Pressed: {controller.act('1')}")
-#     time.sleep(0.5)
+        return [acc, rotate]

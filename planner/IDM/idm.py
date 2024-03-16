@@ -4,11 +4,13 @@
 import numpy as np
 import pandas as pd
 from planner.plannerBase import PlannerBase
+from utils.observation import Observation
+from utils.opendrive2discretenet import parse_opendrive
+from typing import List, Tuple
 
 class IDM(PlannerBase):
     def __init__(self, a_bound=5.0, exv=40, t=1.2, a=2.22, b=2.4, gama=4, s0=1.0, s1=2.0):
-        """跟idm模型有关的模型参数，一定要记得调整
-
+        """跟idm模型有关的模型参数
         :param a_bound: 本车加速度绝对值的上下界
         :param exv: 期望速度
         :param t: 反应时间
@@ -29,20 +31,29 @@ class IDM(PlannerBase):
         self.s_ = 0
 
     def init(self, scenario_dict):
-        print("--------------------------------------------------------------IDM INIT--------------------------------------------------------------")
+        print("----------------------------IDM INIT----------------------------")
+        print(scenario_dict)
+        print("----------------------------------------------------------------")
+        # parse_opendrive(scenario_dict['source_file']['xodr'])
 
-    def act(self, observation):
-        frame = pd.DataFrame()
-        for key, value in observation.vehicle_info.items():
-            sub_frame = pd.DataFrame(value, columns=['x', 'y', 'v', 'yaw', 'length', 'width'],index=[key])
-
-            frame = pd.concat([frame, sub_frame])
+    def act(self, observation: Observation):
+        # 加载主车信息
+        frame = pd.DataFrame(
+            vars(observation.ego_info),
+            columns=['x', 'y', 'v', 'yaw', 'length', 'width'], 
+            index=['ego']
+        )
+        # 加载背景要素状态信息
+        for obj_type in observation.object_info:
+            for obj_name, obj_info in observation.object_info[obj_type].items():
+                sub_frame = pd.DataFrame(vars(obj_info), columns=['x', 'y', 'v', 'yaw', 'length', 'width'],index=[obj_name])
+                frame = pd.concat([frame, sub_frame])
         state = frame.to_numpy()
 
-        return self.deside_acc(state),0
+        return [self.deside_acc(state), 0]
 
-    def deside_acc(self, state):
-        v, fv, dis_gap,direction = self.getInformFront(state)
+    def deside_acc(self, state: pd.DataFrame) -> float:
+        v, fv, dis_gap, direction = self.getInformFront(state)
         # print(v, fv, dis_gap,direction)
         # print(state)
         if dis_gap < 0:
@@ -60,7 +71,7 @@ class IDM(PlannerBase):
         # print(state,v,fv,dis_gap,a_idm)
         return a_idm
 
-    def getInformFront(self,state):
+    def getInformFront(self, state: pd.DataFrame) -> Tuple[float, float, float, float]:
         # direction = np.sign(state[0,2])
         if state[0, 3] < np.pi / 2 or state[0, 3] > np.pi * 3 / 2:
             direction = 1.0

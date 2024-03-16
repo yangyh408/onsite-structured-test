@@ -1,63 +1,37 @@
-# -*- coding: utf-8 -*-
-import signal
-from multiprocessing import Process
-import _thread
-import json
+import os
+import yaml
 import time
-import sys
 
-from TessNG.MyPlugin import MyPlugin
-from TessNG.TESS_API_EXAMPLE import *
-from utils.config import *
+import TessNG
+import OnSiteReplay
 
-def startTessNG():
-    app = QApplication()
+from utils.ScenarioManager import select_scenario_manager
+from utils.logger import logger
+from planner import PLANNER
 
-    config = {'__workspace': os.path.join(ROOT_PATH, 'TessNG'),
-            #   '__netfilepath': r"C:\Users\89525\Desktop\onsite_tessng\scenario\serial\maps\TJST_pure\TJST_pure.tess",
-              '__simuafterload': True,
-              '__custsimubysteps': False
-              }
-    plugin = MyPlugin()
-    factory = TessngFactory()
-    tessng = factory.build(plugin, config)
+def main():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    SCENARIO_DIR = os.path.join(BASE_DIR, 'scenario')
 
-    if tessng is None:
-        sys.exit(0)
-    else:
-        sys.exit(app.exec_())
+    with open('./config/tasks.yaml', 'r') as f:
+        tasks = yaml.safe_load(f)
+    for mode, config in tasks.items():
+        scenario_manager = select_scenario_manager(mode, config)
+        while scenario_manager.next():
+            try:
+                tic = time.time()
+                if mode == 'REPLAY':
+                    OnSiteReplay.run(config, PLANNER(), scene_info=scenario_manager.cur_scene)
+                else:
+                    TessNG.run(mode, config, PLANNER(), scene_info=scenario_manager.cur_scene)
+                toc = time.time()
+                if os.path.exists(scenario_manager.cur_scene.output_path):
+                    logger.info(f"[{mode:8s}-{scenario_manager.cur_scene_num+1:03d}/{len(scenario_manager.tasks):03d}] <{scenario_manager.cur_scene.name}> Test finished in {round(toc - tic, 1)}s.")
+                else:
+                    logger.error(f"[{mode:8s}-{scenario_manager.cur_scene_num+1:03d}/{len(scenario_manager.tasks):03d}] <{scenario_manager.cur_scene.name}> Cannot locate correct output file!")
+            except Exception as e:
+                logger.critical(f"[{mode:8s}-{scenario_manager.cur_scene_num+1:03d}/{len(scenario_manager.tasks):03d}] <{scenario_manager.cur_scene.name}> Test Collapse with error: {repr(e)}.")
 
-def kill(targetPid):
-    try:
-        os.kill(targetPid, signal.SIGINT)
-        print("Kill", targetPid)
-        # a = os.kill(pid, signal.9) #　与上等效
-    except OSError as e:
-        print(e)
-
-def checkTessngTest(tessngPid):
-    pidDict = {"done": 0}
-    # 存入上一次启动的进程
-    with open("./cache.json", "w") as f:
-        json.dump(pidDict, f)
-    while True:
-        try:
-            with open("./cache.json", 'r') as load_f:
-                load_dict = json.load(load_f)
-            done = load_dict['done']
-            if done == 1:
-                print("Waiting for shutdown...")
-                time.sleep(5)
-                kill(tessngPid)
-                break
-            else:
-                time.sleep(2)
-        except FileNotFoundError:
-            pass
 
 if __name__ == '__main__':
-    tessng_p = Process(target=startTessNG)
-    tessng_p.start()
-    pid = tessng_p.pid
-    # 观察Tessng是否需要结束
-    _thread.start_new_thread(checkTessngTest, (pid,))
+    main()
