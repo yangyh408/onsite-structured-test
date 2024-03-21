@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  TESSNG:
+    build: .
+    image: 
+    container_name: onsite-structured-test
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
+      PYTHONIOENCODING: utf-8
+      DISPLAY: :0
+    privileged: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./scenario:/onsite-structured-test/scenario
+      - ./config:/onsite-structured-test/config
+      - ./outputs:/onsite-structured-test/outputs
+      - ./TessNG/WorkSpace/Cert:/onsite-structured-test/TessNG/WorkSpace/Cert
+    networks:
+      - app-tier
+    entrypoint: ["python", "./main.py"]
+
+networks:
+  app-tier:
+    driver: bridge
