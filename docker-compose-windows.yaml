@@ -3,14 +3,13 @@ version: '3'
 services:
   TESSNG:
     build: .
-    image: yangyh408/onsite-structured-test:idm-test
-    container_name: tessng
+    image: 
+    container_name: onsite-structured-test
     environment:
       ALLOW_ANONYMOUS_LOGIN: 'yes'
       PYTHONIOENCODING: utf-8
       DISPLAY: host.docker.internal:0
     volumes:
-      - ./TessNG/WorkSpace/Cert:/onsite-structured-test/TessNG/WorkSpace/Cert
       - ./scenario:/onsite-structured-test/scenario
       - ./config:/onsite-structured-test/config
       - ./outputs:/onsite-structured-test/outputs
