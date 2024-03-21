@@ -1,6 +1,25 @@
 # Change Log
 
-## [Ver 3.1] - 2024.03.15
+## [Ver 3.1.1] - 2024.03.22
+
+### Fix 
++ 修复了在ScenarioManager模块在加载场景时可能错误将某些未测试场景判定为已有输出场景的问题
+
+### Update
++ 更新了运行TessNG前判断是否已激活TessNG的功能
+
+### Add
++ 添加了docker-compose文件用于docker的快速打包测试
+
+### Doc
+
++ 添加[运行Docker容器本地环境配置](./docs/Docker_env_setup.md)说明文件
++ 更新README中规控算法的docker打包运行方法
+
+
+
+
+## [Ver 3.1.0] - 2024.03.16
 
 ### Refact
 

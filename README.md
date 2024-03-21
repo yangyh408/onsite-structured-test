@@ -320,39 +320,62 @@ IDM跟驰算法可以实现沿直线行驶时的自动跟车，但由于IDM仅�
 
 + **生成docker镜像**
 
-  ```bash
-  docker build -t <hub-user>/<repo-name>:<tag> .
-  ```
+  + docker镜像命名方式（该镜像名即为**DockerID**）
 
-  + *hub-user*：DockerHub上注册的用户名
+    ```bash
+    <hub-user>/<repo-name>:<tag>
+    ```
 
-  + *repo-name*：镜像名称
+    + *hub-user*：DockerHub上注册的用户名
 
-    >   为防止他人抄袭或直接上传您编写的代码，请不要在相关内容中体现出 OnSite等比赛相关内容。可以采用密码生成器等手段，生成镜像名）
+    + *repo-name*：镜像名称
 
-  + *tag*：镜像标签，标注镜像的版本信息
+      >   为防止他人抄袭或直接上传您编写的代码，请不要在相关内容中体现出 OnSite等比赛相关内容。可以采用密码生成器等手段，生成镜像名）
 
-+ **本地测试docker镜像**
+    + *tag*：镜像标签，标注镜像的版本信息
 
-  > *注：仅限在Ubuntu20.04系统环境下开发的用户执行下述指令进行本地docker测试*
-  >
-  > dockerID `<hub-user>/<repo-name>:<tag>`与上述生成的镜像保持一致
-  
-  ```bash
-  #!/bin/bash
-  
-  # 本机结构化测试工具位置（需要运行激活过TessNG）
-  local_root_dir="/home/yangyh408/Desktop/onsite_structured_test"
-  
-  # 分别挂载本地场景文件、配置文件、TessNG激活证书、输出文件这四个文件路径并以后台运行容器
-  sudo docker run -d \
-  -v $local_root_dir/scenario:/onsite_structured_test/scenario \
-  -v $local_root_dir/config:/onsite_structured_test/config \
-  -v $local_root_dir/TessNG/WorkSpace/Cert:/onsite_structured_test/TessNG/WorkSpace/Cert \
-  -v $local_root_dir/outputs:/onsite_structured_test/outputs \
-  <hub-user>/<repo-name>:<tag>
-  ```
-  
+  + **仅生成**不在本地运行镜像
+
+    ```bash
+    docker build -t <hub-user>/<repo-name>:<tag> .
+    ```
+
+    > 生成命令最后还有一个“.”，用于指定build命令执行的位置
+
+  + **生成docker镜像并在本地运行测试**
+
+    + 参考[运行Docker容器本地环境配置](./docs/Docker_env_setup.md)文件进行本机环境配置
+
+    + 根据**所使用的系统**打开对应`docker-compose`YAML文件，向其中`image`字段添加镜像名称
+
+      ```yaml
+      services:
+        TESSNG:
+          image: <hub-user>/<repo-name>:<tag>
+      ```
+
+    + 生成docker镜像并创建容器
+
+      该容器会挂载当前项目文件夹中的配置文件夹`./config`、场景文件夹`./scenario`以及输出文件夹`./outputs`，容器运行输出可直接在`./outputs`中查看
+
+      ```bash
+      # Windows
+      docker compose -f .\docker-compose-windows.yaml up
+      # Linux
+      docker compose -f .\docker-compose-ubuntu.yaml up
+      ```
+
+      > 注：若运行时弹出TessNG激活界面，点击*"导入激活码"*并在容器内选择*"/onsite-structured-test/assets/onsite_formal.key"*，之后点击*"提交"*即可
+
+    + 运行结束后删除本地容器
+
+      ```bash
+      # Windows
+      docker compose -f .\docker-compose-windows.yaml down
+      # Linux
+      docker compose -f .\docker-compose-ubuntu.yaml down
+      ```
+
 + **上传至dockerHub**
 
   >   dockerID `<hub-user>/<repo-name>:<tag>`与上述生成的镜像保持一致
@@ -379,6 +402,8 @@ onsite_structured_test
 ├── run_ubuntu.sh
 ├── README.md
 ├── Dockerfile
+├── docker-compose-ubuntu.yaml
+├── docker-compose-windows.yaml
 ├── config
 │   ├── logging.conf
 │   └── tasks.yaml
@@ -401,15 +426,16 @@ onsite_structured_test
 
 + 文件功能说明
 
-  | 文件名           | 功能                                    |
-  | ---------------- | --------------------------------------- |
-  | main.py          | 仿真测试主程序                          |
-  | createTasks.py   | 生成tess场景文件                        |
-  | visualize.py     | 仿真结果与测试任务可视化程序            |
-  | requirements.txt | python环境依赖                          |
-  | run_ubuntu.sh    | Ubuntu20.04系统下仿真测试运行的bash指令 |
-  | README.md        | 测试工具说明文档                        |
-  | Dockerfile       | Docker镜像构建指令                      |
+  | 文件名                 | 功能                                    |
+  | ---------------------- | --------------------------------------- |
+  | main.py                | 仿真测试主程序                          |
+  | createTasks.py         | 生成tess场景文件                        |
+  | visualize.py           | 仿真结果与测试任务可视化程序            |
+  | requirements.txt       | python环境依赖                          |
+  | run_ubuntu.sh          | Ubuntu20.04系统下仿真测试运行的bash指令 |
+  | README.md              | 测试工具说明文档                        |
+  | Dockerfile             | Docker镜像构建指令                      |
+  | docker-compose-\*.yaml | Docker镜像构建与本地运行工具            |
 
 + 文件夹功能说明
 
@@ -456,32 +482,22 @@ onsite_structured_test
 
 ## [CHANGE LOG](./docs/CHANGELOG.md)
 
-### Refact
+### [Ver 3.1.1] - 2024.03.22
 
-+ 重构输出`Recorder`模块，在输出文件中会包含选手回传的两个控制量以及经过执行器动力学修正后实际作用在主车上的控制量
+#### Fix 
 
-### Fix
++ 修复了在ScenarioManager模块在加载场景时可能错误将某些未测试场景判定为已有输出场景的问题
 
-+ 更新执行器动力学约束模块，当车速减为0时重新计算加速度
-+ 修复了Lattice规控器读取新版接口报错的问题
+#### Update
 
-### Add
++ 更新了运行TessNG前判断是否已激活TessNG的功能
 
-+ 添加`docs`文件夹用于存放各类文档
-+ 添加三种测试模式的详细说明文档
+#### Add
 
-### Update
++ 添加了docker-compose文件用于docker的快速打包测试
 
-+ 更新执行器动力学约束参数`ROT_LIMIT`和`ROT_RATE_LIMIT`
-+ 将`ScenarioManagerForFragment`中场景步长的获取方式由配置文件改为通过OpenSCENARIO文件获取
-+ 在可视化回放中添加了执行器动力学约束修正前后的主车控制量显示
-+ 将资源文件夹由`src`改为`assets`
-+ 更新`requirements.txt`
-+ 更新`planner/plannerBase`的注释文档
-+ 更新`Dockerfile`中的build指令
+#### Doc
 
-### Doc
-
-+ 在`OnSiteReplay`中添加代码注释
-+ 在`MySimulatorBase`中添加代码注释
++ 添加[运行Docker容器本地环境配置](./docs/Docker_env_setup.md)说明文件
++ 更新README中规控算法的docker打包运行方法
 
