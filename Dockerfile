@@ -5,10 +5,10 @@ COPY requirements.txt ./
 
 RUN pip install -r requirements.txt -i https://mirrors.cloud.tencent.com/pypi/simple --no-cache-dir
 
-VOLUME ["/onsite_structured_test/TessNG/WorkSpace/Cert"]
-VOLUME ["/onsite_structured_test/scenario"]
-VOLUME ["/onsite_structured_test/config"]
-VOLUME ["/onsite_structured_test/outputs"]
+VOLUME ["/onsite-structured-test/TessNG/WorkSpace/Cert"]
+VOLUME ["/onsite-structured-test/scenario"]
+VOLUME ["/onsite-structured-test/config"]
+VOLUME ["/onsite-structured-test/outputs"]
 
 ENTRYPOINT [ "./run_test.sh" ]
 

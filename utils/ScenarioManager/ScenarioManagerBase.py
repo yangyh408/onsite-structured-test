@@ -34,7 +34,7 @@ class ScenarioManagerBase():
 
     def _is_exist(self, scenario_name: str) -> bool:
         for file in os.listdir(self.output_path):
-            if self.scenario_type in file and scenario_name in file:
+            if self.scenario_type in file and f"_{scenario_name}_" in file:
                 return True
         return False
 
