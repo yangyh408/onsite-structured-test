@@ -19,7 +19,7 @@ def parse_opendrive(path_opendrive: str) -> None:
     """将解析完成的Network类对象转换为DiscreteNetwork路网，其中使用的只有路网中各车道两侧边界的散点坐标
         车道边界点通过线性插值的方式得到，坐标点储存在<DiscreteNetwork.discretelanes.left_vertices/right_vertices> -> List"""
     open_drive_info = loadedRoadNetwork.export_discrete_network(
-        filter_types=["driving","biking", "onRamp", "offRamp", "exit", "entry", "sidewalk"])  # -> <class> DiscreteNetwork
+        filter_types=["driving","biking", "onRamp", "offRamp", "exit", "entry", "sidewalk", "bidirectional"])  # -> <class> DiscreteNetwork
     return open_drive_info
 
 def main():
