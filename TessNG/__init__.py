@@ -43,7 +43,15 @@ def run(mode: str, mode_config: dict, planner: object=None, scene_info: Scenario
     """
     tessng_p = Process(target=startTessNG, args=(mode, mode_config, planner, scene_info, auto_run))
     tessng_p.start()
-    tessng_p.join()
+
+    if mode == "FRAGMENT":
+        timeout = mode_config.get('timeout', 600)
+        tessng_p.join(timeout)
+        if tessng_p.is_alive():
+            tessng_p.terminate()
+            raise TimeoutError(f"Timeout: TessNG process is still running after {timeout} seconds.")
+    else:
+        tessng_p.join()
 
 if __name__ == '__main__':
     run('serial', {'tasks': ['Cyz_TJST_1.json', 'Cyz_TJST_2.json']})
