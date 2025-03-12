@@ -18,7 +18,8 @@ def startTessNG(mode: str, mode_config: dict, planner: object, scene_info: Scena
     app = QApplication()
     config = {'__workspace': workspace_dir,
               '__simuafterload': auto_run,
-              '__custsimubysteps': False
+              '__custsimubysteps': False,
+              '__url_machineid': 'http://8.153.80.241:8083/machine/id'
               }
     tess_file = scene_info.source_file['tess']
     if tess_file:
