@@ -938,22 +938,21 @@ class LATTICEQQ(PlannerBase):
         dfs_path_finder = DFSPathFinder(scenario_dict)
         destination_rect = scenario_dict['task_info']['targetPos']
         start_point = scenario_dict['task_info']['startPos']
-        path_lanes, path = dfs_path_finder.find_shortest_path(start_point, destination_rect)
+        _, path = dfs_path_finder.find_shortest_path(start_point, destination_rect)
 
         # 初始化轨迹跟踪控制器
         self.speed_tracker = PIDController(kp=1/P.delta_t, ki=0, kd=0, max_output=3, min_output=-3)
         self.theta_tracker = PIDController(kp=8, ki=0, kd=1, max_output=0.66, min_output=-0.66)
 
-        # 路径可视化
         if path is not None:
             # 若能够找到最优路径
             cts_points = np.array(path).T
             path_points = CalcRefLine(cts_points)
             self.path_points = path_points
 
-            # 初始化Visualizer
-            self.traj_visualizer = TrajVisualizer(scenario_dict)
-            self.traj_visualizer.show_path(path_points)
+            # # 路径可视化
+            # self.traj_visualizer = TrajVisualizer(scenario_dict)    # 初始化Visualizer
+            # self.traj_visualizer.show_path(path_points)
         else:
             # 若不能找到路径
             pass
@@ -1006,12 +1005,12 @@ class LATTICEQQ(PlannerBase):
                 # wheel_target = optimal_trajectory[1].theta - heading_ego  # 方向盘转角
             except:
                 wheel_target = 0
-            # 显示最优轨迹
-            self.traj_visualizer.show_traj(traj_points=optimal_trajectory,
-                                           position=[x_ego, y_ego],
-                                           path_points=self.path_points,
-                                           linewidth=2
-                                           )
+            # # 显示最优轨迹
+            # self.traj_visualizer.show_traj(traj_points=optimal_trajectory,
+            #                                position=[x_ego, y_ego],
+            #                                path_points=self.path_points,
+            #                                linewidth=2
+            #                                )
             # 显示其它轨迹
             # for i, poly_traj in enumerate(sorted_sampled_poly_trajs):
             #     if i > 0:
